@@ -48,9 +48,6 @@ object KMeans {
 }
 
 class KMeansArgs(a: Seq[String]) extends ScallopConf(a) {
-  /*
-  This handles the parameters passed by the k8s-spark-operator
-   */
   val input: ScallopOption[String] = trailArg[String](required = true, name = "<input>",
     descr = "Input file").map(_.toLowerCase)
 

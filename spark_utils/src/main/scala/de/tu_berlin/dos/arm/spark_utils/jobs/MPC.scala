@@ -30,15 +30,6 @@ object MPC {
       .getOrCreate()
     import spark.implicits._
 
-    var listener: EnelScaleOutListener = null
-    if (isEnelEnabled(sparkConf)){
-      listener = new EnelScaleOutListener(spark.sparkContext, sparkConf)
-      spark.sparkContext.addSparkListener(listener)
-    }
-    if (isEllisEnabled(sparkConf)) {
-      spark.sparkContext.addSparkListener(new EllisScaleOutListener(spark.sparkContext, sparkConf))
-    }
-
     val data = spark.sparkContext.textFile(conf.input(), spark.sparkContext.defaultMinPartitions).map(s => {
       val parts = s.split(',')
       val (labelStr, featuresArr) = parts.splitAt(1)
@@ -84,9 +75,6 @@ object MPC {
 
     println("Test set accuracy = " + evaluator.evaluate(predictionAndLabels))
 
-    while(listener != null && listener.hasOpenFutures){
-      Thread.sleep(5000)
-    }
     spark.stop()
   }
 }

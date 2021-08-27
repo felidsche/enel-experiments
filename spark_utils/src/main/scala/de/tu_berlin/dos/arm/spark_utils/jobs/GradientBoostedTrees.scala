@@ -23,8 +23,8 @@ object GradientBoostedTrees {
 
     // Load and parse the data file.
     val data = MLUtils.loadLabeledPoints(sparkContext, conf.input())
-    // Split the data into training and test sets (30% held out for testing)
-    val splits = data.randomSplit(Array(0.7, 0.3))
+    // Split the data into training and test sets (20% held out for testing)
+    val splits = data.randomSplit(Array(0.8, 0.2))
     val (trainingData, testData) = (splits(0), splits(1))
 
     // Train a GradientBoostedTrees model.
@@ -53,6 +53,9 @@ object GradientBoostedTrees {
 }
 
 class GradientBoostedTreesArgs(a: Seq[String]) extends ScallopConf(a) {
+  /*
+  This handles the parameters passed by the k8s-spark-operator
+   */
   val input: ScallopOption[String] = trailArg[String](required = true, name = "<input>",
     descr = "Input file").map(_.toLowerCase)
 
