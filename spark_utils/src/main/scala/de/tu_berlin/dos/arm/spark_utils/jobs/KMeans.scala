@@ -24,15 +24,6 @@ object KMeans {
 
     val sparkContext = new SparkContext(sparkConf)
 
-    var listener: EnelScaleOutListener = null
-    if (isEnelEnabled(sparkConf)){
-      listener = new EnelScaleOutListener(sparkContext, sparkConf)
-      sparkContext.addSparkListener(listener)
-    }
-    if (isEllisEnabled(sparkConf)) {
-      sparkContext.addSparkListener(new EllisScaleOutListener(sparkContext, sparkConf))
-    }
-
     println("Start KMeans training...")
     // Load and parse the data
     val data = sparkContext.textFile(conf.input(), splits)
@@ -52,14 +43,14 @@ object KMeans {
       println(v)
     })
 
-    while(listener != null  && listener.hasOpenFutures){
-      Thread.sleep(5000)
-    }
     sparkContext.stop()
   }
 }
 
 class KMeansArgs(a: Seq[String]) extends ScallopConf(a) {
+  /*
+  This handles the parameters passed by the k8s-spark-operator
+   */
   val input: ScallopOption[String] = trailArg[String](required = true, name = "<input>",
     descr = "Input file").map(_.toLowerCase)
 

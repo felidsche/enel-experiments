@@ -23,15 +23,6 @@ object LogisticRegression {
 
     val sparkContext = new SparkContext(sparkConf)
 
-    var listener: EnelScaleOutListener = null
-    if (isEnelEnabled(sparkConf)){
-      listener = new EnelScaleOutListener(sparkContext, sparkConf)
-      sparkContext.addSparkListener(listener)
-    }
-    if (isEllisEnabled(sparkConf)) {
-      sparkContext.addSparkListener(new EllisScaleOutListener(sparkContext, sparkConf))
-    }
-
     var data = sparkContext.textFile(conf.input(), sparkContext.defaultMinPartitions).map(s => {
       val parts = s.split(',')
       val (labelStr, featuresArr) = parts.splitAt(1)
@@ -43,7 +34,7 @@ object LogisticRegression {
     if (conf.cache()) {
       data = data.cache()
     }
-    // Split data into training (60%) and test (40%).
+    // Split data into training (80%) and test (20%).
     val Array(training, test) = data.randomSplit(Array(0.8, 0.2))
 
     // Run training algorithm to build the model
@@ -65,7 +56,7 @@ object LogisticRegression {
     val accuracy = metrics.accuracy
     println(s"Accuracy = $accuracy")
 
-    while(listener != null && listener.hasOpenFutures){
+    while (listener != null && listener.hasOpenFutures) {
       Thread.sleep(5000)
     }
     sparkContext.stop()

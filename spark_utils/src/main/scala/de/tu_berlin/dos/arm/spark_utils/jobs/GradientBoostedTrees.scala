@@ -19,14 +19,6 @@ object GradientBoostedTrees {
 
     val sparkContext = new SparkContext(sparkConf)
 
-    var listener: EnelScaleOutListener = null
-    if (isEnelEnabled(sparkConf)){
-      listener = new EnelScaleOutListener(sparkContext, sparkConf)
-      sparkContext.addSparkListener(listener)
-    }
-    if (isEllisEnabled(sparkConf)) {
-      sparkContext.addSparkListener(new EllisScaleOutListener(sparkContext, sparkConf))
-    }
     sparkContext.textFile(conf.input())
 
     // Load and parse the data file.
@@ -56,9 +48,6 @@ object GradientBoostedTrees {
     println("Test Error = " + testErr)
     println("Learned classification GBT model:\n" + model.toDebugString)
 
-    while(listener != null && listener.hasOpenFutures){
-      Thread.sleep(5000)
-    }
     sparkContext.stop()
   }
 }
