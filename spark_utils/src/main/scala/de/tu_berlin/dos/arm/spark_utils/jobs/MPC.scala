@@ -1,6 +1,5 @@
 package de.tu_berlin.dos.arm.spark_utils.jobs
 
-import de.tu_berlin.dos.arm.spark_utils.adjustments.{EllisScaleOutListener, EnelScaleOutListener}
 import org.apache.spark.SparkConf
 import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator

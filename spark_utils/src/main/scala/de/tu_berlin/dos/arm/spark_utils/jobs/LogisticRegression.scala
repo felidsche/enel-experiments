@@ -1,6 +1,5 @@
 package de.tu_berlin.dos.arm.spark_utils.jobs
 
-import de.tu_berlin.dos.arm.spark_utils.adjustments.{EllisScaleOutListener, EnelScaleOutListener}
 import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.linalg.Vectors
@@ -55,9 +54,6 @@ object LogisticRegression {
     val accuracy = metrics.accuracy
     println(s"Accuracy = $accuracy")
 
-    while (listener != null && listener.hasOpenFutures) {
-      Thread.sleep(5000)
-    }
     sparkContext.stop()
   }
 }

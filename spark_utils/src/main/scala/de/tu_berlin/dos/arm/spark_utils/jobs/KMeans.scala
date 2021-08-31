@@ -3,7 +3,6 @@
  */
 package de.tu_berlin.dos.arm.spark_utils.jobs
 
-import de.tu_berlin.dos.arm.spark_utils.adjustments.{EllisScaleOutListener, EnelScaleOutListener}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop.exceptions.ScallopException
@@ -22,11 +21,15 @@ object KMeans {
       .setAppName(appSignature)
 
     val sparkContext = new SparkContext(sparkConf)
+    sparkContext.setCheckpointDir("../checkpoints")
 
     println("Start KMeans training...")
     // Load and parse the data
     val data = sparkContext.textFile(conf.input(), splits)
     val parsedData = data.map(s => Vectors.dense(s.split(' ').map(_.toDouble)))
+    println("Start checkpointing...")
+    // add a checkpoint on the map task to resume here if clustering fails
+    parsedData.checkpoint()
 
     val clusters = new org.apache.spark.mllib.clustering.KMeans()
       .setEpsilon(0)
