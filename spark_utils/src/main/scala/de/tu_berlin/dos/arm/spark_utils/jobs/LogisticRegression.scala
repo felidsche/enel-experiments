@@ -1,6 +1,5 @@
 package de.tu_berlin.dos.arm.spark_utils.jobs
 
-import Utils.{isEllisEnabled, isEnelEnabled}
 import de.tu_berlin.dos.arm.spark_utils.adjustments.{EllisScaleOutListener, EnelScaleOutListener}
 import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
