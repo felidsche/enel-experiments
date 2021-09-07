@@ -33,7 +33,7 @@ object KMeans {
     val executionDate = form.format(execCal.getTime);
 
     val sparkContext = new SparkContext(sparkConf)
-    sparkContext.setCheckpointDir("../../checkpoints/KMeans/" + executionDate + "/")
+    sparkContext.setCheckpointDir("../checkpoints/KMeans/" + executionDate + "/")
 
     println("Start KMeans training...")
     // Load and parse the data

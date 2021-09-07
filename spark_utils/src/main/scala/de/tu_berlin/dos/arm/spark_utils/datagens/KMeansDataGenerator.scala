@@ -18,7 +18,7 @@ object KMeansDataGenerator {
       System.exit(1)
     }
     /*
-    default conf: 555555 55 ../../../../samples/Kmeans.txt
+    default conf: 55555555 55 ../../../../samples/Kmeans.txt
      */
     val n = args(0).toInt
     val k = args(1).toInt
