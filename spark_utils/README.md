@@ -13,7 +13,7 @@ We then implemented our own listener (`EnelScaleOutListener`). It utilizes an ht
 
 * Environment
   
-  - Spark: `v3.1.1`
+  - Spark: `v3.1.2`
   - Scala: `2.12.10`
   - H2:    `1.4.194`
     

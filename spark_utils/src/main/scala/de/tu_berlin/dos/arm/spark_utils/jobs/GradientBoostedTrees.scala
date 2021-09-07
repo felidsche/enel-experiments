@@ -1,64 +1,99 @@
 package de.tu_berlin.dos.arm.spark_utils.jobs
 
-import org.apache.spark.mllib.tree.configuration.BoostingStrategy
-import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.evaluation.RegressionEvaluator
+import org.apache.spark.ml.feature.VectorIndexer
+import org.apache.spark.ml.regression.{GBTRegressionModel, GBTRegressor}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop.exceptions.ScallopException
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 object GradientBoostedTrees {
+
   def main(args: Array[String]): Unit = {
 
     val conf = new GradientBoostedTreesArgs(args)
     val appSignature = "GradientBoostedTrees"
 
+    val form = new SimpleDateFormat("dd.MM.yyyy_HH:MM:SS")
+    val execCal = Calendar.getInstance
+    val checkpointTime = form.format(execCal.getTime)
+
     val sparkConf = new SparkConf()
       .setAppName(appSignature)
+      .setMaster("local") // TODO: remove before cluter execution
 
     val sparkContext = new SparkContext(sparkConf)
+    sparkContext.setCheckpointDir("../../checkpoints/GBT/" + checkpointTime + "/")
 
-    sparkContext.textFile(conf.input())
+    val spark = SparkSession
+      .builder
+      .appName("GradientBoostedTrees")
+      .getOrCreate()
 
-    // Load and parse the data file.
-    val data = MLUtils.loadLabeledPoints(sparkContext, conf.input())
-    // Split the data into training and test sets (20% held out for testing)
-    val splits = data.randomSplit(Array(0.8, 0.2))
-    val (trainingData, testData) = (splits(0), splits(1))
+
+    println("Start GBT training...")
+
+    // we need DataFrames since Checkpoints are not available with RDD based MLLlib
+    val data = spark.read.format("libsvm").load(conf.input())
+
+    val featureIndexer = new VectorIndexer()
+      .setInputCol("features")
+      .setOutputCol("indexedFeatures")
+      .setMaxCategories(4)
+      .fit(data)
+
+    // Split the data into training and test sets (30% held out for testing).
+    val Array(trainingData, testData) = data.randomSplit(Array(0.7, 0.3))
+
 
     // Train a GradientBoostedTrees model.
-    // The defaultParams for Classification use LogLoss by default.
-    val boostingStrategy = BoostingStrategy
-      .defaultParams("Regression")
-    boostingStrategy.setNumIterations(conf.iterations()) // Note: Use more iterations in practice.
-    //    boostingStrategy.treeStrategy.setNumClasses(2)
-    //    boostingStrategy.treeStrategy.setMaxDepth(5)
-    // Empty categoricalFeaturesInfo indicates all features are continuous.
-    //    boostingStrategy.treeStrategy.setCategoricalFeaturesInfo(Map[Int, Int]())
+    val gbt = new GBTRegressor()
+      .setLabelCol("label")
+      .setFeaturesCol("features")
+      .setMaxIter(conf.iterations())
+      .setCheckpointInterval(conf.checkpointInterval()) // defines after how many iterations to checkpoint
 
-    val model = org.apache.spark.mllib.tree.GradientBoostedTrees.train(trainingData, boostingStrategy)
+    val pipeline = new Pipeline()
+      .setStages(Array(featureIndexer, gbt))
 
-    // Evaluate model on test instances and compute test error
-    val labelAndPreds = testData.map { point =>
-      val prediction = model.predict(point.features)
-      (point.label, prediction)
-    }
-    val testErr = labelAndPreds.filter(r => r._1 != r._2).count.toDouble / testData.count()
-    println("Test Error = " + testErr)
-    println("Learned classification GBT model:\n" + model.toDebugString)
+    val model = pipeline.fit(trainingData)
+
+    println("Start GBT predictions...")
+    val predictions = model.transform(testData)
+
+    // Select example rows to display.
+    predictions.select("prediction", "label", "features").show(5)
+
+    // Select (prediction, true label) and compute test error.
+    val evaluator = new RegressionEvaluator()
+      .setLabelCol("label")
+      .setPredictionCol("prediction")
+      .setMetricName("rmse")
+
+    val rmse = evaluator.evaluate(predictions)
+
+    println(s"Root Mean Squared Error (RMSE) on test data = $rmse")
+    println(s"Learned regression GBT model:\n ${model.stages(1).asInstanceOf[GBTRegressionModel].toDebugString}")
 
     sparkContext.stop()
   }
 }
 
 class GradientBoostedTreesArgs(a: Seq[String]) extends ScallopConf(a) {
-  /*
-  This handles the parameters passed by the k8s-spark-operator
-   */
   val input: ScallopOption[String] = trailArg[String](required = true, name = "<input>",
     descr = "Input file").map(_.toLowerCase)
 
   val iterations: ScallopOption[Int] = opt[Int](noshort = true, default = Option(100),
     descr = "Amount of iterations")
+
+  val checkpointInterval: ScallopOption[Int] = opt[Int](noshort = true, default = Option(10),
+    descr = "Interval of checkpoints")
+
 
   override def onError(e: Throwable): Unit = e match {
     case ScallopException(message) =>
@@ -71,4 +106,3 @@ class GradientBoostedTreesArgs(a: Seq[String]) extends ScallopConf(a) {
 
   verify()
 }
-
