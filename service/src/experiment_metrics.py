@@ -1,6 +1,7 @@
 import re
 import requests
 import json
+import pandas as pd
 
 
 class ExperimentMetrics:
@@ -12,7 +13,7 @@ class ExperimentMetrics:
         self.has_checkpoint = has_checkpoint
         self.hist_server_url = hist_server_url
 
-    def get_data_from_hist_server(self, hist_server_url: str, endpoint: str) -> dict:
+    def get_data(self, hist_server_url: str, endpoint: str) -> dict:
         data = {}
         try:
             data = json.loads(requests.get(url=hist_server_url + endpoint).content)
@@ -20,17 +21,50 @@ class ExperimentMetrics:
             print(f"{e} \n No values were returned")
         return data
 
-    def get_job_data_from_hist_server(self, hist_server_url):
+    def get_app_data(self, app_id) -> pd.DataFrame:
+        """
+        App >> (Job) >> Stage >> Task
+        For an app, get the stages and tasks of each job
+        Note: The job data is skipped to get the stages and tasks
+        :param app_id:
+        :return:
+        """
+        stages_attempt_data = self.get_stages_attempt_data(app_id=app_id)
+        stages_attempt_df = pd.DataFrame(stages_attempt_data).stack().apply(pd.Series).reset_index()
+        stages_attempt_df = stages_attempt_df[["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks", "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "tasks"]]
+        tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(level=-1).apply(pd.Series).dropna(axis=0, how="all").reset_index(0)
+        tasks_df = tasks_df[["attempt", "duration", "executorId", "index", "launchTime", "taskId"]]
+        df = stages_attempt_df.join(tasks_df).drop(labels="tasks", axis=1)
+        # df.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage_and_task_data.csv", na_rep="nan")
+        return df
 
-        pass
 
-    def get_task_list_from_hist_server(self, hist_server_url, app_id: str, stage_id: str, stage_attempt_id: str):
+    def get_stages_attempt_data(self, app_id: str) -> list:
+        stages_endpoint = f"applications/{app_id}/stages/"
+        stages_data = self.get_data(self.hist_server_url, endpoint=stages_endpoint)
+        stages_attempts = []
+        # reversed to be in chronological order
+        for stage in reversed(stages_data):
+            stage_id = stage["stageId"]
+            stages_attempt_endpoint = f"applications/{app_id}/stages/{stage_id}"
+            next_stage_attempts = self.get_data(self.hist_server_url, endpoint=stages_attempt_endpoint)
+            stages_attempts.append(next_stage_attempts)
+
+        return stages_attempts
+
+    """
+    def get_stage_data(self, app_id: str, job_data: dict) -> dict:
+        for job in job_data:
+            
+        endpoint = f"/applications/{app_id}/stages/{stage_id}"
+    """
+
+    def get_task_list(self, hist_server_url, app_id: str, stage_id: str, stage_attempt_id: str):
         endpoint = f"applications/{app_id}/stages/{stage_id}/{stage_attempt_id}/taskList"
-        task_list = self.get_data_from_hist_server(
+        task_list = self.get_data(
             hist_server_url=hist_server_url,
             endpoint=endpoint
         )
-
 
         return task_list
 
