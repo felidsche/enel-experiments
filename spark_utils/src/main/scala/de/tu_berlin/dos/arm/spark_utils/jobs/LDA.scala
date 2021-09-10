@@ -14,14 +14,9 @@ import org.rogach.scallop.{ScallopConf, ScallopOption}
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-object LDA {
+object LDAWorkload {
 
   def main(args: Array[String]): Unit = {
-    // init spark
-    val spark = SparkSession
-      .builder
-      .appName("LDA")
-      .getOrCreate()
 
     val sparkConf = new SparkConf()
       .setAppName("LDA")
@@ -36,9 +31,16 @@ object LDA {
 
     sparkContext.setCheckpointDir("../checkpoints/LDA/" + executionDate + "/")
 
+    val spark = SparkSession
+      .builder
+      .appName("LDA")
+      .getOrCreate()
+
     val conf = new LDAArgs(args)
     // ?
     import spark.implicits._
+
+    println("Load and preprocess data...")
     val stopWords: Array[String] = sparkContext.textFile(path = conf.inputStopWords()).collect().flatMap(_.stripMargin.split("\\s+"))
     val source: DataFrame = sparkContext.textFile(path = conf.inputCorpus()).toDF("docs")
     val tokenizer: RegexTokenizer = new RegexTokenizer().setInputCol("docs").setOutputCol("rawTokens")
@@ -52,6 +54,7 @@ object LDA {
       .setOutputCol("features")
     val pipeline: Pipeline = new Pipeline().setStages(Array(tokenizer, stopWordsRemover, countVectorizer))
 
+    println("Start LDA training...")
     val model: PipelineModel = pipeline.fit(source)
     val corpus: RDD[(Long, Vector)] = model.transform(source)
       .select("features")
@@ -96,10 +99,10 @@ object LDA {
 }
 
 class LDAArgs(a: Seq[String]) extends ScallopConf(a) {
-  val inputCorpus: ScallopOption[String] = trailArg[String](required = true, name = "<input>",
+  val inputCorpus: ScallopOption[String] = trailArg[String](required = true, name = "<inputCorpus>",
     descr = "Input corpus file").map(_.toLowerCase)
 
-  val inputStopWords: ScallopOption[String] = trailArg[String](required = true, name = "<input>",
+  val inputStopWords: ScallopOption[String] = trailArg[String](required = true, name = "<inputStopWords>",
     descr = "Input stopwords file").map(_.toLowerCase)
 
   val k: ScallopOption[Int] = opt[Int](required = true, descr = "Amount of clusters")
