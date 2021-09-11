@@ -102,5 +102,5 @@ class ExperimentMetrics:
         checkpoint_rdds = self.get_matches_from_log(log=log, pattern=pattern)
         return checkpoint_rdds
 
-    def merge_tc_rdds(self):
-        pass
+    def merge_tc_rdds(self, tcs:list, rdds: list) -> dict:
+        return dict(zip(tcs, rdds))

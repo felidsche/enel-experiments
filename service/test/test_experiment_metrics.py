@@ -27,10 +27,14 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
 
     def test_merge_tc_rdds(self):
         if self.em.get_has_checkpoint():
-            tc, count = self.em.get_tcs(log=get_log())
+            tcs = self.em.get_tcs(log=get_log())
             rdds = self.em.get_checkpoint_rdds(log=get_log())
-            rdd_tc = self.em.merge_tc_rdds()
-            pass
+            rdd_tcs = self.em.merge_tc_rdds(tcs=tcs, rdds=rdds)
+            self.assertIsInstance(rdd_tcs, dict, "rdd_tcs is not a dict")
+            self.assertEqual(len(rdd_tcs.keys()), len(rdd_tcs.values()), "not the same amount of keys and values")
+            self.assertIsNotNone(rdd_tcs.keys(), "Keys are not present")
+            self.assertIsNotNone(rdd_tcs.values(), "Keys are not present")
+
     def test_get_data(self):
 
         jobs = self.em.get_data(
