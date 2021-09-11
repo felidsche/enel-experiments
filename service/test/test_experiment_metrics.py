@@ -16,9 +16,9 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
 
     def __init__(self, methodName: str = ...):
         super().__init__(methodName)
-        self.stage_attempt_id = "0"
-        self.app_id = "local-1631265504216"
+        self.app_id = "local-1631359088830"
         self.stage_id = "218"
+        self.stage_attempt_id = "0"
 
     def test_get_tc(self):
         if self.em.get_has_checkpoint():
@@ -45,8 +45,15 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
             self.assertIsNotNone(rdd_tcs.values(), "Keys are not present")
 
     def test_add_tc_to_app_data(self):
-        # pp_data = self.em.get_app_data(app_id=)
-        self.fail()
+        app_data = self.em.get_app_data(app_id=self.app_id)
+        rdd_tcs = self.em.merge_tc_rdds(
+            tcs=self.em.get_tcs(log=get_log()),
+            rdds=self.em.get_checkpoint_rdds(log=get_log())
+        )
+        app_data_tc = self.em.add_tc_to_app_data(rdd_tcs=rdd_tcs, app_data=app_data)
+        self.assertIsInstance(app_data_tc, pd.DataFrame, "Not a pandas Dataframe")
+        self.assertGreater(app_data_tc.shape[1], app_data.shape[1], "No columns were gained")
+        self.assertGreater(app_data_tc.shape[0], app_data.shape[0], "No rows were gained")
 
     def test_get_data(self):
 

@@ -2,7 +2,6 @@ import json
 import pandas as pd
 import re
 import requests
-from typing import Tuple
 
 
 class ExperimentMetrics:
@@ -19,7 +18,7 @@ class ExperimentMetrics:
         try:
             data = json.loads(requests.get(url=hist_server_url + endpoint).content)
         except (json.JSONDecodeError, requests.exceptions.ConnectionError) as e:
-            print(f"{e} \n No values were returned")
+            print(f"{e} \n No values were returned, check the app_id")
         return data
 
     def get_app_data(self, app_id) -> pd.DataFrame:
@@ -35,17 +34,20 @@ class ExperimentMetrics:
         try:
             stages_attempt_df = stages_attempt_df[
                 ["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks",
-                 "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "rddIds", "tasks"]]
-            tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(level=-1).apply(
+                 "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "rddIds",
+                 "tasks"]]
+            tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(
+                level=-1).apply(
                 pd.Series).dropna(axis=0, how="all").reset_index(0)
             tasks_df = tasks_df[["attempt", "duration", "executorId", "index", "launchTime", "taskId"]]
             df = stages_attempt_df.join(tasks_df).drop(labels="tasks", axis=1)
+            df.rename(columns={"attempt": "taskAttempt", "duration": "taskDuration", "executorId": "taskExecutorId",
+                               "index": "taskIndex", "launchTime": "taskLaunchTime"}, inplace=True)
             return df
         except KeyError as e:
             print(f"{e}, No completed applications found!")
             return stages_attempt_df
         # df.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage_and_task_data.csv",na_rep="nan")
-
 
     def get_stages_attempt_data(self, app_id: str) -> list:
         stages_endpoint = f"applications/{app_id}/stages/"
@@ -108,5 +110,20 @@ class ExperimentMetrics:
         checkpoint_rdds = self.get_matches_from_log(log=log, pattern=pattern)
         return checkpoint_rdds
 
-    def merge_tc_rdds(self, tcs:list, rdds: list) -> dict:
-        return dict(zip(tcs, rdds))
+    def merge_tc_rdds(self, tcs: list, rdds: list) -> dict:
+        # keys: rdd_ids, values: time for checkpoint
+        return dict(zip(rdds, tcs))
+
+    def add_tc_to_app_data(self, rdd_tcs: dict, app_data: pd.DataFrame) -> pd.DataFrame:
+        # contains the rddId and the corresponding tc
+        rdd_tcs_df = pd.DataFrame.from_dict(rdd_tcs, orient="index", columns=["tcMs"]).reset_index()
+        rdd_tcs_df.rename(columns={"index": "rddId"}, inplace=True)
+        # contains only the `stageId` were at least 1 rdd was checkpointed
+        rdd_tcs_unique_df = app_data.set_index("stageId").rddIds.apply(pd.Series) \
+            .stack().reset_index(0, name='rddId').merge(app_data) \
+            .merge(rdd_tcs_df, how='right').sort_values('rddId') \
+            .reset_index(drop=True)
+        # merge the records with tcMs into the initial df
+        app_data_tc = app_data.merge(rdd_tcs_unique_df[["rddId", "tcMs", "stageId"]], on="stageId", how="outer")
+        app_data_tc.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage__task_and_tc_data.csv",na_rep="nan")
+        return app_data_tc
