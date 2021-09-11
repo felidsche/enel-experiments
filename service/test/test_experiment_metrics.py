@@ -13,21 +13,24 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
 
     def test_get_tc(self):
         if self.em.get_has_checkpoint():
-            tc, count = self.em.get_tc(log=get_log())
-            print(f"{count} checlpoints took {tc} ms")
-            self.assertIsInstance(tc, int, "Tc is int")
-            self.assertGreater(tc, 0, f"TC: <= 0")
-            self.assertIsInstance(count, int, "Tc count is int")
-            self.assertGreater(count, 0, f"TC count: <= 0")
+            tcs = self.em.get_tcs(log=get_log())
+            self.assertIsInstance(tcs, list, "Tcs is not a list")
+            self.assertGreater(len(tcs), 0, "No tcs found")
 
     def test_get_checkpoint_rdd(self):
         if self.em.get_has_checkpoint():
-            tc, count = self.em.get_tc(log=get_log())
-            rdds = self.em.get_checkpoint_rdds(log=get_log())
-            self.assertGreater(len(rdds), 0, f"RDD checkpoint count <= 0")
-            self.assertIsInstance(count, int, "RDD checkpoint count")
-            self.assertEqual(count, len(rdds))
+            tcs = self.em.get_tcs(log=get_log())
+            checkpoint_rdds = self.em.get_checkpoint_rdds(log=get_log())
+            self.assertIsInstance(checkpoint_rdds, list, "checkpoint_rdds is not a list")
+            self.assertGreater(len(checkpoint_rdds), 0, "No checkpoint_rdds found")
+            self.assertEqual(len(tcs), len(checkpoint_rdds), "The amount of tcs and checkpoint_rdds does not match")
 
+    def test_merge_tc_rdds(self):
+        if self.em.get_has_checkpoint():
+            tc, count = self.em.get_tcs(log=get_log())
+            rdds = self.em.get_checkpoint_rdds(log=get_log())
+            rdd_tc = self.em.merge_tc_rdds()
+            pass
     def test_get_data(self):
 
         jobs = self.em.get_data(

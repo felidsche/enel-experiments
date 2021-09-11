@@ -72,19 +72,21 @@ class ExperimentMetrics:
 
         return task_list
 
-    def get_tc(self, log: str) -> Tuple[int, int]:
+    def get_matches_from_log(self, log: str, pattern: str) -> list:
         """
-        returns the time taken for checkpoints of a task in a job in ms
+        returns the regex matches for a given pattern from the Spark application log
         """
-        pattern = r"(Checkpointing took\s)(\d{2,})(\sms)"
-        tc = 0
-        count = 0
+        re_matches = []
         matches = re.finditer(pattern=pattern, string=log)
         for match in matches:
-            count += 1
-            tc += int(match.group(2))
-        print(f"{count} checkpoints are in the log")
-        return tc, count
+            re_matches.append(int(match.group(2)))
+        print(f"{len(re_matches)} matches found in the log")
+        return re_matches
+
+    def get_tcs(self, log: str) -> list:
+        pattern = r"(Checkpointing took\s)(\d{2,})(\sms)"
+        tcs = self.get_matches_from_log(log=log, pattern=pattern)
+        return tcs
 
     def get_has_checkpoint(self) -> bool:
         return self.has_checkpoint
@@ -97,10 +99,8 @@ class ExperimentMetrics:
 
     def get_checkpoint_rdds(self, log: str) -> list:
         pattern = r"(Done\scheckpointing\sRDD\s)(\d{1,})(\sto)"
-        checkpoint_rdds = []
-        matches = re.finditer(pattern=pattern, string=log)
-        for match in matches:
-            rdd_id = int(match.group(2))
-            checkpoint_rdds.append(rdd_id)
-        print(f"{len(checkpoint_rdds)} checkpoint RDDs are in the log")
+        checkpoint_rdds = self.get_matches_from_log(log=log, pattern=pattern)
         return checkpoint_rdds
+
+    def merge_tc_rdds(self):
+        pass
