@@ -7,10 +7,11 @@
 
 
 * Usage
-
+    0. Prerequisites
     ```bash
     mvn clean package
     $SPARK_HOME/sbin/start-history-server.sh
+    mkdir /tmp/spark-events
     ```
     1. GBT
     ```bash

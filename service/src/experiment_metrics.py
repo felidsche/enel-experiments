@@ -18,7 +18,7 @@ class ExperimentMetrics:
         data = {}
         try:
             data = json.loads(requests.get(url=hist_server_url + endpoint).content)
-        except json.JSONDecodeError as e:
+        except (json.JSONDecodeError, requests.exceptions.ConnectionError) as e:
             print(f"{e} \n No values were returned")
         return data
 
@@ -32,28 +32,34 @@ class ExperimentMetrics:
         """
         stages_attempt_data = self.get_stages_attempt_data(app_id=app_id)
         stages_attempt_df = pd.DataFrame(stages_attempt_data).stack().apply(pd.Series).reset_index()
-        stages_attempt_df = stages_attempt_df[
-            ["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks",
-             "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "rddIds", "tasks"]]
-        tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(level=-1).apply(
-            pd.Series).dropna(axis=0, how="all").reset_index(0)
-        tasks_df = tasks_df[["attempt", "duration", "executorId", "index", "launchTime", "taskId"]]
-        df = stages_attempt_df.join(tasks_df).drop(labels="tasks", axis=1)
-        df.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage_and_task_data.csv",
-                  na_rep="nan")
-        return df
+        try:
+            stages_attempt_df = stages_attempt_df[
+                ["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks",
+                 "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "rddIds", "tasks"]]
+            tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(level=-1).apply(
+                pd.Series).dropna(axis=0, how="all").reset_index(0)
+            tasks_df = tasks_df[["attempt", "duration", "executorId", "index", "launchTime", "taskId"]]
+            df = stages_attempt_df.join(tasks_df).drop(labels="tasks", axis=1)
+            return df
+        except KeyError as e:
+            print(f"{e}, No completed applications found!")
+            return stages_attempt_df
+        # df.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage_and_task_data.csv",na_rep="nan")
+
 
     def get_stages_attempt_data(self, app_id: str) -> list:
         stages_endpoint = f"applications/{app_id}/stages/"
         stages_data = self.get_data(self.hist_server_url, endpoint=stages_endpoint)
         stages_attempts = []
         # reversed to be in chronological order
-        for stage in reversed(stages_data):
-            stage_id = stage["stageId"]
-            stages_attempt_endpoint = f"applications/{app_id}/stages/{stage_id}"
-            next_stage_attempts = self.get_data(self.hist_server_url, endpoint=stages_attempt_endpoint)
-            stages_attempts.append(next_stage_attempts)
-
+        try:
+            for stage in reversed(stages_data):
+                stage_id = stage["stageId"]
+                stages_attempt_endpoint = f"applications/{app_id}/stages/{stage_id}"
+                next_stage_attempts = self.get_data(self.hist_server_url, endpoint=stages_attempt_endpoint)
+                stages_attempts.append(next_stage_attempts)
+        except TypeError as e:
+            print(f"{e}, No completed applications found!")
         return stages_attempts
 
     """

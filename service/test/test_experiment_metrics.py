@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from experiment_metrics import ExperimentMetrics
+import pandas as pd
 
 
 def get_log():
@@ -9,7 +10,15 @@ def get_log():
 
 
 class TestExperimentMetrics(TestCase, ExperimentMetrics):
+    # the Spark History server needs to run for the tests to work
+
     em = ExperimentMetrics(has_checkpoint=True)
+
+    def __init__(self, methodName: str = ...):
+        super().__init__(methodName)
+        self.stage_attempt_id = "0"
+        self.app_id = "local-1631265504216"
+        self.stage_id = "218"
 
     def test_get_tc(self):
         if self.em.get_has_checkpoint():
@@ -35,6 +44,10 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
             self.assertIsNotNone(rdd_tcs.keys(), "Keys are not present")
             self.assertIsNotNone(rdd_tcs.values(), "Keys are not present")
 
+    def test_add_tc_to_app_data(self):
+        # pp_data = self.em.get_app_data(app_id=)
+        self.fail()
+
     def test_get_data(self):
 
         jobs = self.em.get_data(
@@ -46,9 +59,9 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
     def test_get_task_list(self):
         task_list = self.em.get_task_list(
             hist_server_url=self.em.hist_server_url,
-            app_id="local-1631261190617",
-            stage_id="218",
-            stage_attempt_id="0"
+            app_id=self.app_id,
+            stage_id=self.stage_id,
+            stage_attempt_id=self.stage_attempt_id
         )
         self.fail()
 
@@ -56,28 +69,29 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
         log = "Chejkpoint took: 952938 ms"
         self.em = ExperimentMetrics(has_checkpoint=True)
         if self.em.get_has_checkpoint():
-            tc = self.em.get_tc(log=log)
-            self.assertEqual(tc, 0)
+            tcs = self.em.get_tcs(log=log)
+            self.assertEqual(len(tcs), 0)
 
     def test_tc_not_ms(self):
         # if tc is not in ms, then the regex does not match
         log = "Checkpointing took: 952938 s"
         if self.em.get_has_checkpoint():
-            tc = self.em.get_tc(log=log)
-            self.assertEqual(tc, 0)
+            tcs = self.em.get_tcs(log=log)
+            self.assertEqual(len(tcs), 0)
 
     def test_calc_mttr(self):
+        # TODO: implement this once the failure injector is there
         mttr = self.calc_mttr()
         print(f"MTTR: {mttr}")
         self.assertIsInstance(mttr, int, "MTTR is int")
         self.assertGreater(mttr, 0, "MTTR <= 0")
 
     def test_get_app_data(self):
-        app_id = "local-1631265504216"
+        app_id = self.app_id
         app_data = self.em.get_app_data(app_id=app_id)
-        assert app_data is not None
+        self.assertIsInstance(app_data, pd.DataFrame)
 
     def test_get_stages_attempt_data(self):
-        app_id = "local-1631265504216"
+        app_id = self.app_id
         stages_data = self.em.get_stages_attempt_data(app_id=app_id)
-        assert len(stages_data) == 35  # 35 stage attempts for the app_id
+        self.assertIsInstance(stages_data, list, "Stages data is not a list")
