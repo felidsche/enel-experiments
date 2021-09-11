@@ -1,7 +1,8 @@
-import re
-import requests
 import json
 import pandas as pd
+import re
+import requests
+from typing import Tuple
 
 
 class ExperimentMetrics:
@@ -31,13 +32,16 @@ class ExperimentMetrics:
         """
         stages_attempt_data = self.get_stages_attempt_data(app_id=app_id)
         stages_attempt_df = pd.DataFrame(stages_attempt_data).stack().apply(pd.Series).reset_index()
-        stages_attempt_df = stages_attempt_df[["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks", "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "tasks"]]
-        tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(level=-1).apply(pd.Series).dropna(axis=0, how="all").reset_index(0)
+        stages_attempt_df = stages_attempt_df[
+            ["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks",
+             "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "rddIds", "tasks"]]
+        tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(level=-1).apply(
+            pd.Series).dropna(axis=0, how="all").reset_index(0)
         tasks_df = tasks_df[["attempt", "duration", "executorId", "index", "launchTime", "taskId"]]
         df = stages_attempt_df.join(tasks_df).drop(labels="tasks", axis=1)
-        # df.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage_and_task_data.csv", na_rep="nan")
+        df.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage_and_task_data.csv",
+                  na_rep="nan")
         return df
-
 
     def get_stages_attempt_data(self, app_id: str) -> list:
         stages_endpoint = f"applications/{app_id}/stages/"
@@ -68,7 +72,7 @@ class ExperimentMetrics:
 
         return task_list
 
-    def get_tc(self, log: str) -> int:
+    def get_tc(self, log: str) -> Tuple[int, int]:
         """
         returns the time taken for checkpoints of a task in a job in ms
         """
@@ -80,7 +84,7 @@ class ExperimentMetrics:
             count += 1
             tc += int(match.group(2))
         print(f"{count} checkpoints are in the log")
-        return tc
+        return tc, count
 
     def get_has_checkpoint(self) -> bool:
         return self.has_checkpoint
@@ -90,3 +94,13 @@ class ExperimentMetrics:
         returns the mean time to recovery of a task in a job in ms
         """
         return 0
+
+    def get_checkpoint_rdds(self, log: str) -> list:
+        pattern = r"(Done\scheckpointing\sRDD\s)(\d{1,})(\sto)"
+        checkpoint_rdds = []
+        matches = re.finditer(pattern=pattern, string=log)
+        for match in matches:
+            rdd_id = int(match.group(2))
+            checkpoint_rdds.append(rdd_id)
+        print(f"{len(checkpoint_rdds)} checkpoint RDDs are in the log")
+        return checkpoint_rdds

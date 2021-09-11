@@ -11,6 +11,23 @@ def get_log():
 class TestExperimentMetrics(TestCase, ExperimentMetrics):
     em = ExperimentMetrics(has_checkpoint=True)
 
+    def test_get_tc(self):
+        if self.em.get_has_checkpoint():
+            tc, count = self.em.get_tc(log=get_log())
+            print(f"{count} checlpoints took {tc} ms")
+            self.assertIsInstance(tc, int, "Tc is int")
+            self.assertGreater(tc, 0, f"TC: <= 0")
+            self.assertIsInstance(count, int, "Tc count is int")
+            self.assertGreater(count, 0, f"TC count: <= 0")
+
+    def test_get_checkpoint_rdd(self):
+        if self.em.get_has_checkpoint():
+            tc, count = self.em.get_tc(log=get_log())
+            rdds = self.em.get_checkpoint_rdds(log=get_log())
+            self.assertGreater(len(rdds), 0, f"RDD checkpoint count <= 0")
+            self.assertIsInstance(count, int, "RDD checkpoint count")
+            self.assertEqual(count, len(rdds))
+
     def test_get_data(self):
 
         jobs = self.em.get_data(
@@ -27,13 +44,6 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
             stage_attempt_id="0"
         )
         self.fail()
-
-    def test_get_tc(self):
-        if self.em.get_has_checkpoint():
-            tc = self.em.get_tc(log=get_log())
-            print(f"Tc: {tc}")
-            self.assertIsInstance(tc, int, "Tc is int")
-            self.assertGreater(tc, 0, f"TC: <= 0")
 
     def test_get_tc_zero(self):
         log = "Chejkpoint took: 952938 ms"
@@ -55,7 +65,6 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
         self.assertIsInstance(mttr, int, "MTTR is int")
         self.assertGreater(mttr, 0, "MTTR <= 0")
 
-
     def test_get_app_data(self):
         app_id = "local-1631265504216"
         app_data = self.em.get_app_data(app_id=app_id)
@@ -64,4 +73,4 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
     def test_get_stages_attempt_data(self):
         app_id = "local-1631265504216"
         stages_data = self.em.get_stages_attempt_data(app_id=app_id)
-        assert len(stages_data) == 35 # 35 stage attempts for the app_id
+        assert len(stages_data) == 35  # 35 stage attempts for the app_id
