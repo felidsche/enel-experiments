@@ -10,8 +10,8 @@
     0. Prerequisites
     ```bash
     mvn clean package
-    $SPARK_HOME/sbin/start-history-server.sh
     mkdir /tmp/spark-events
+    $SPARK_HOME/sbin/start-history-server.sh # localhost:18080
     cd /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/enel-experiments/spark_utils 
     ```
     1. GBT

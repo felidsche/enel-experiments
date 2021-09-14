@@ -109,7 +109,8 @@ class LDAArgs(a: Seq[String]) extends ScallopConf(a) {
   val iterations: ScallopOption[Int] = opt[Int](noshort = true, default = Option(100),
     descr = "Amount of LDA iterations")
 
-  val checkpointInterval: ScallopOption[Int] = opt[Int](noshort = true, default = Option(10),
+  // -1 disables checkpointing
+  val checkpointInterval: ScallopOption[Int] = opt[Int](noshort = true, default = Option(-1),
     descr = "Interval of checkpoints")
 
   override def onError(e: Throwable): Unit = e match {
