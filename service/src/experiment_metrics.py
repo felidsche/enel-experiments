@@ -80,20 +80,24 @@ class ExperimentMetrics:
 
         return task_list
 
-    def get_matches_from_log(self, log: str, pattern: str) -> list:
+    def get_matches_from_log(self, log: str, pattern: str, group: int) -> list:
         """
         returns the regex matches for a given pattern from the Spark application log
         """
         re_matches = []
         matches = re.finditer(pattern=pattern, string=log)
         for match in matches:
-            re_matches.append(int(match.group(2)))
+            try:
+                re_matches.append(int(match.group(group)))
+            except ValueError as e:
+                # match is not an int, return str
+                re_matches.append(match.group(group))
         print(f"{len(re_matches)} matches found in the log")
         return re_matches
 
     def get_tcs(self, log: str) -> list:
         pattern = r"(Checkpointing took\s)(\d{2,})(\sms)"
-        tcs = self.get_matches_from_log(log=log, pattern=pattern)
+        tcs = self.get_matches_from_log(log=log, pattern=pattern, group=2)
         return tcs
 
     def get_has_checkpoint(self) -> bool:
@@ -107,7 +111,7 @@ class ExperimentMetrics:
 
     def get_checkpoint_rdds(self, log: str) -> list:
         pattern = r"(Done\scheckpointing\sRDD\s)(\d{1,})(\sto)"
-        checkpoint_rdds = self.get_matches_from_log(log=log, pattern=pattern)
+        checkpoint_rdds = self.get_matches_from_log(log=log, pattern=pattern, group=2)
         return checkpoint_rdds
 
     def merge_tc_rdds(self, tcs: list, rdds: list) -> dict:
@@ -127,3 +131,35 @@ class ExperimentMetrics:
         app_data_tc = app_data.merge(rdd_tcs_unique_df[["rddId", "tcMs", "stageId"]], on="stageId", how="outer")
         app_data_tc.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage__task_and_tc_data.csv",na_rep="nan")
         return app_data_tc
+
+    def get_app_id(self, log: str) -> str:
+        """
+        returns the ID of a Spark App from the application log using Regex
+        :param log:
+        :return: s
+        """
+        pattern = r"(local-\d{1,})(\.inprogress)"
+        app_id_matches = self.get_matches_from_log(log=log, pattern=pattern, group=1)
+        app_id = app_id_matches[0]  # the first ID in the log is the actual App ID
+        return app_id
+
+    def get_app_duration(self, app_id: str) -> int:
+        """
+
+        :param app_id:
+        :return: app_duration in ms (defaults to 0)
+        """
+        applications = self.get_data(hist_server_url=self.hist_server_url, endpoint="applications")
+        default = 0
+        app_duration = None
+        for app in applications:
+            if app["id"] != app_id:
+                continue
+            else:
+                attempts = app["attempts"]
+                for attempt in attempts:
+                    app_duration = attempt["duration"]
+                    return app_duration
+        if app_duration is None:
+            print("no duration was found for the given app_id")
+            return default
