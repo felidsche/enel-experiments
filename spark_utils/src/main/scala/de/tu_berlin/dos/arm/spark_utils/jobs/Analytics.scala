@@ -47,7 +47,11 @@ object Analytics {
     import spark.implicits._
 
     // random analytics workload
-    var df = orders.join(orderItems, usingColumn = "ORDER_ID").checkpoint()
+    var df = orders.join(orderItems, usingColumn = "ORDER_ID")
+    if (conf.checkpointRdd().equals(1)) {
+      println("Checkpointing the DataFrame...")
+      df.checkpoint()
+    }
     var df1 = df.filter($"GOODS_ID".like("1018544"))
     var df2 = df.filter($"GOODS_ID".like("1016104"))
 
@@ -86,8 +90,10 @@ class AnalyticsArgs(a: Seq[String]) extends ScallopConf(a) {
   val ordersInput: ScallopOption[String] = trailArg[String](required = true, name = "<ordersInput>",
     descr = "Order input file").map(_.toLowerCase)
 
-  val checkpointRDD: ScallopOption[Int] = opt[Int](noshort = true, default = Option(10),
-    descr = "The ID of the RDD to checkpoint")
+  // interpreted as boolean
+  val checkpointRdd: ScallopOption[Int] = opt[Int](noshort = true, default = Option(0),
+    descr = "Whether to checkpoint the RDD before aggregation or not")
+
   override def onError(e: Throwable): Unit = e match {
     case ScallopException(message) =>
       println(message)
