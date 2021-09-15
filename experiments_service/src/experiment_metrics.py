@@ -1,7 +1,15 @@
 import json
-import pandas as pd
 import re
+import sys
+from os.path import exists
+
+import pandas as pd
 import requests
+
+
+def get_log(path: str):
+    with open(path, mode="r") as file:
+        return file.read()
 
 
 class ExperimentMetrics:
@@ -92,7 +100,6 @@ class ExperimentMetrics:
             except ValueError as e:
                 # match is not an int, return str
                 re_matches.append(match.group(group))
-        print(f"{len(re_matches)} matches found in the log")
         return re_matches
 
     def get_tcs(self, log: str) -> list:
@@ -129,7 +136,6 @@ class ExperimentMetrics:
             .reset_index(drop=True)
         # merge the records with tcMs into the initial df
         app_data_tc = app_data.merge(rdd_tcs_unique_df[["rddId", "tcMs", "stageId"]], on="stageId", how="outer")
-        app_data_tc.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage__task_and_tc_data.csv",na_rep="nan")
         return app_data_tc
 
     def get_app_id(self, log: str) -> str:
@@ -163,3 +169,33 @@ class ExperimentMetrics:
         if app_duration is None:
             print("no duration was found for the given app_id")
             return default
+
+
+if __name__ == '__main__':
+    has_checkpoint = bool(int(sys.argv[1]))
+    em = ExperimentMetrics(has_checkpoint=has_checkpoint)
+    log_path = "/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/app-logs/app.log"
+    log = get_log(log_path)
+    app_id = em.get_app_id(log=log)
+    app_data = em.get_app_data(app_id=app_id)
+    tcs = em.get_tcs(log=log)
+
+    rdds = em.get_checkpoint_rdds(log=log)
+    duration = em.get_app_duration(app_id=app_id)
+    print(f"For App_ID: {app_id} The total duration was {duration} ms")
+    if has_checkpoint:
+        print(f"For App_ID: {app_id} The rdds: {rdds} were checkpointed and it took {sum(tcs)} ms")
+    rdd_tcs = em.merge_tc_rdds(
+        tcs=tcs,
+        rdds=rdds
+    )
+    app_data_tc = em.add_tc_to_app_data(rdd_tcs=rdd_tcs, app_data=app_data)
+    filepath = f"experiments_service/output/{app_id}stage_task_and_tc_data.csv"
+    file_exists = exists(filepath)
+    if not file_exists:
+        app_data_tc.to_csv(
+            path_or_buf=filepath,
+            na_rep="nan"
+        )
+
+    print(f"Result:\n {app_data_tc.head(3)}")

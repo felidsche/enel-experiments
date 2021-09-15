@@ -28,7 +28,7 @@ object GradientBoostedTrees {
       .setMaster("local") // TODO: remove before cluter execution
 
     val sparkContext = new SparkContext(sparkConf)
-    sparkContext.setCheckpointDir("../checkpoints/GBT/" + checkpointTime + "/")
+    sparkContext.setCheckpointDir("checkpoints/GBT/" + checkpointTime + "/")
 
     val spark = SparkSession
       .builder

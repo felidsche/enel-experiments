@@ -29,7 +29,7 @@ object LDAWorkload {
     val executionDate = form.format(execCal.getTime);
 
 
-    sparkContext.setCheckpointDir("../checkpoints/LDA/" + executionDate + "/")
+    sparkContext.setCheckpointDir("checkpoints/LDA/" + executionDate + "/")
 
     val spark = SparkSession
       .builder

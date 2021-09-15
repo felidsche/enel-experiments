@@ -144,3 +144,7 @@ samples
 
 # checkpoints
 checkpoints
+
+# log and output
+log
+output

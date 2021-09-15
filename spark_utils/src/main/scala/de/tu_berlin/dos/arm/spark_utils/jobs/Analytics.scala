@@ -32,7 +32,7 @@ object Analytics {
       .setMaster(master)
 
     val sparkContext = new SparkContext(sparkConf)
-    sparkContext.setCheckpointDir("../checkpoints/" + appSignature + "/" + checkpointTime + "/")
+    sparkContext.setCheckpointDir("checkpoints/" + appSignature + "/" + checkpointTime + "/")
 
     val spark = SparkSession
       .builder()
@@ -70,7 +70,7 @@ object Analytics {
       .sample(fraction = conf.samplingFraction(), seed = sampleSeed)
 
 
-    println("Starting Analytics...")
+    println("Start Analytics Workload...")
 
     // This import is needed to use the $-notation
     import spark.implicits._
@@ -88,11 +88,13 @@ object Analytics {
       sum($"GOODS_PRICE").alias("SUM_GOODS_PRICE")
     ).orderBy($"SUM_GOODS_PRICE".desc_nulls_last, $"ORDER_DATE".desc_nulls_last)
 
+    println("The result:")
+
     df.show(5)
 
     spark.stop()
 
-    println("Finished Analytics.")
+    println("Finished Analytics Workload.")
   }
 
 }

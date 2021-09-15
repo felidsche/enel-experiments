@@ -7,14 +7,6 @@
 
 
 * Usage
-    0. Prerequisites
-    ```bash
-    mvn clean package
-    mkdir /tmp/spark-events
-    $SPARK_HOME/sbin/start-history-server.sh # localhost:18080
-    cd TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/spark_utils/
-    $SPARK_HOME/sbin/stop-history-server.sh
-    ```
     1. GBT
     ```bash
     $SPARK_HOME/bin/spark-submit \
@@ -49,7 +41,7 @@
     --master local \
     --driver-java-options "-Dlog4j.configuration=file:/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/conf/log4j.properties" \
     target/runtime-adjustments-experiments-1.0-SNAPSHOT-jar-with-dependencies.jar \
-    --checkpoint-rdd 1 /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER_ITEM.txt /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER.txt
+    --sampling-fraction 0.01 --checkpoint-rdd 1 /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER_ITEM.txt /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER.txt
     ```
 
   

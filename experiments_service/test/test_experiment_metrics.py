@@ -2,12 +2,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from experiment_metrics import ExperimentMetrics
-
-
-def get_log(path: str):
-    with open(path, mode="r") as file:
-        return file.read()
+from experiment_metrics import ExperimentMetrics, get_log
 
 
 class TestExperimentMetrics(TestCase, ExperimentMetrics):
@@ -145,4 +140,5 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
         non_ckpt_run_duration = self.em.get_app_duration(app_id=app_id_non_ckpt_run)
 
         ckpt_run_duration_calc = non_ckpt_run_duration + tc_sum_ckpt_run_log
-        self.assertEqual(ckpt_run_duration_calc, ckpt_run_duration, f"The calculation differs by: {abs(ckpt_run_duration_calc-ckpt_run_duration)} ms")
+        self.assertEqual(ckpt_run_duration_calc, ckpt_run_duration,
+                         f"The calculation differs by: {abs(ckpt_run_duration_calc - ckpt_run_duration)} ms")
