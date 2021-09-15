@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.tu_berlin.dos.arm</groupId>
-    <artifactId>enel_injector</artifactId>
+    <artifactId>failure_injector</artifactId>
     <version>1.0</version>
 
     <dependencies>
@@ -79,7 +79,7 @@
                                 </transformer>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>de.tu_berlin.dos.arm.enel_injector.Run</mainClass>
+                                    <mainClass>de.tu_berlin.dos.arm.failure_injector.Run</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

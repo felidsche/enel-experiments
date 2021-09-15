@@ -1,4 +1,4 @@
-package de.tu_berlin.dos.arm.enel_injector.utils;
+package de.tu_berlin.dos.arm.failure_injector.utils;
 
 import java.util.Random;
 

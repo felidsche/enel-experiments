@@ -1,15 +1,13 @@
-package de.tu_berlin.dos.arm.enel_injector.clients;
+package de.tu_berlin.dos.arm.failure_injector.clients;
 
-import de.tu_berlin.dos.arm.enel_injector.clients.kubernetes.KubernetesClient;
-import de.tu_berlin.dos.arm.enel_injector.utils.UtilityFunctions;
+import de.tu_berlin.dos.arm.failure_injector.clients.kubernetes.KubernetesClient;
+import de.tu_berlin.dos.arm.failure_injector.utils.UtilityFunctions;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -50,8 +48,8 @@ public class ClientsManager {
         try {
             List<Pod> pods = this.k8sClient.getPodsWithLabel(namespace, labelKey, labelValue);
             LOG.info(String.format(
-                "Number of pods detected with label <%s:%s> in namespace %s is %d",
-                labelKey, labelValue, namespace, pods.size()));
+                    "Number of pods detected with label <%s:%s> in namespace %s is %d",
+                    labelKey, labelValue, namespace, pods.size()));
             if (this.minPods <= pods.size()) {
 
                 stopWatch.start();
@@ -71,18 +69,16 @@ public class ClientsManager {
                         String podName = pods.get(index).getMetadata().getName();
                         this.k8sClient.execCommandOnPod(podName, this.namespace, "sh", "-c", "kill 1");
                         break;
-                    }
-                    else LOG.info("Not all pods status were in valid phases: " + Arrays.toString(validPhases.toArray()));
+                    } else
+                        LOG.info("Not all pods status were in valid phases: " + Arrays.toString(validPhases.toArray()));
                     new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS);
                 }
-            }
-            else LOG.info(String.format("No pods found with label <%s:%s> in namespace %s", labelKey, labelValue, namespace));
-        }
-        catch (Exception e) {
+            } else
+                LOG.info(String.format("No pods found with label <%s:%s> in namespace %s", labelKey, labelValue, namespace));
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
-            if(this.stopWatch.isStarted()){
+        } finally {
+            if (this.stopWatch.isStarted()) {
                 this.stopWatch.reset();
             }
         }

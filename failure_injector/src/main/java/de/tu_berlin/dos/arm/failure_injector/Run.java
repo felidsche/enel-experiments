@@ -1,8 +1,8 @@
-package de.tu_berlin.dos.arm.enel_injector;
+package de.tu_berlin.dos.arm.failure_injector;
 
-import de.tu_berlin.dos.arm.enel_injector.clients.ClientsManager;
-import de.tu_berlin.dos.arm.enel_injector.utils.FileReader;
-import de.tu_berlin.dos.arm.enel_injector.utils.UtilityFunctions;
+import de.tu_berlin.dos.arm.failure_injector.clients.ClientsManager;
+import de.tu_berlin.dos.arm.failure_injector.utils.FileReader;
+import de.tu_berlin.dos.arm.failure_injector.utils.UtilityFunctions;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 
@@ -25,7 +25,7 @@ public class Run {
     public static void main(String[] args) throws Exception {
 
         // get properties file
-        Properties props = FileReader.GET.read("enel_injector.properties", Properties.class);
+        Properties props = FileReader.GET.read("failure_injector.properties", Properties.class);
 
         // get properties for failure experiments
         int interval = Integer.parseInt(props.getProperty("general.interval"));

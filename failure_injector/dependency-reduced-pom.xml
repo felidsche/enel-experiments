@@ -43,7 +43,7 @@
                   <resource>reference.conf</resource>
                 </transformer>
                 <transformer>
-                  <mainClass>de.tu_berlin.dos.arm.enel_injector.Run</mainClass>
+                  <mainClass>de.tu_berlin.dos.arm.failure_injector.Run</mainClass>
                 </transformer>
               </transformers>
             </configuration>
