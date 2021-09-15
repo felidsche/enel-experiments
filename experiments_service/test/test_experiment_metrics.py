@@ -23,6 +23,8 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
     def test_get_tc(self):
         if self.em.get_has_checkpoint():
             tcs = self.em.get_tcs(log=get_log(path=self.ckpt_run_log_path))
+            print(f"TCs: {tcs}")
+            print(f"TC sum: {sum(tcs)} ms")
             self.assertIsInstance(tcs, list, "Tcs is not a list")
             self.assertGreater(len(tcs), 0, "No tcs found")
 
@@ -45,6 +47,7 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
             self.assertIsNotNone(rdd_tcs.values(), "Keys are not present")
 
     def test_add_tc_to_app_data(self):
+        # this is very slow for large logs and needs improvement
         log = get_log(path=self.ckpt_run_log_path)
         app_id = self.em.get_app_id(log=log)
         app_data = self.em.get_app_data(app_id=app_id)
