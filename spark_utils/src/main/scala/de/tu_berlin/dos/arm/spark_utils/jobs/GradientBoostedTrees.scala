@@ -32,7 +32,7 @@ object GradientBoostedTrees {
 
     val spark = SparkSession
       .builder
-      .appName("GradientBoostedTrees")
+      .appName(appSignature)
       .getOrCreate()
 
 
