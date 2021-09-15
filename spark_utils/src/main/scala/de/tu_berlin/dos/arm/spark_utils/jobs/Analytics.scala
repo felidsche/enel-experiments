@@ -17,14 +17,22 @@ object Analytics {
     // constants
     val conf = new AnalyticsArgs(args)
     val appSignature = "Analytics"
+    val master = "local" // TODO: change before cluter execution
 
     val form = new SimpleDateFormat("dd.MM.yyyy_HH:MM:SS")
     val execCal = Calendar.getInstance
     val checkpointTime = form.format(execCal.getTime)
 
+    val sparkConf = new SparkConf()
+      .setAppName(appSignature)
+      .setMaster(master)
+
+    val sparkContext = new SparkContext(sparkConf)
+    sparkContext.setCheckpointDir("../checkpoints/"+ appSignature +"/" + checkpointTime + "/")
+
     val spark = SparkSession
       .builder()
-      .master("local[2]")
+      .master(master)
       .appName(appSignature)
       .getOrCreate()
 
@@ -39,10 +47,11 @@ object Analytics {
     import spark.implicits._
 
     // random analytics workload
-    var df = orders.join(orderItems, usingColumn = "ORDER_ID")
+    var df = orders.join(orderItems, usingColumn = "ORDER_ID").checkpoint()
     var df1 = df.filter($"GOODS_ID".like("1018544"))
     var df2 = df.filter($"GOODS_ID".like("1016104"))
 
+    // if any of the aggregations fail the join does not need to be repeated
     df1 = df1.groupBy($"BUYER_ID", $"GOODS_ID", $"SHOP_PRICE").agg(
       min($"GOODS_PRICE").alias("MIN_GOODS_PRICE"),
       mean($"GOODS_PRICE").alias("MEAN_GOODS_PRICE"),
