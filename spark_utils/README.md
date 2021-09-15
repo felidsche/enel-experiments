@@ -12,7 +12,8 @@
     mvn clean package
     mkdir /tmp/spark-events
     $SPARK_HOME/sbin/start-history-server.sh # localhost:18080
-    cd /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/enel-experiments/spark_utils 
+    cd TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/spark_utils/
+    $SPARK_HOME/sbin/stop-history-server.sh
     ```
     1. GBT
     ```bash
@@ -39,7 +40,7 @@
     --master local \
     --driver-java-options "-Dlog4j.configuration=file:/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/conf/log4j.properties" \
     target/runtime-adjustments-experiments-1.0-SNAPSHOT-jar-with-dependencies.jar \
-    --k 3 --iterations 3 --checkpoint-interval 1 ../samples/wikipedia-corpus.txt ../samples/stopwords.txt
+    --k 10 --iterations 50 --checkpoint-interval 5 ../samples/wikipedia-corpus.txt ../samples/stopwords.txt
     ```
 
   
