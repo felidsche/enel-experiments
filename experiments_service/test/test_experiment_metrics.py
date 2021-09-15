@@ -17,8 +17,8 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
 
     def __init__(self, methodName: str = ...):
         super().__init__(methodName)
-        self.ckpt_run_log_path = f"fixtures/LDA/2021091414-lda-k3-it3-ci1-wikipedia.log"
-        self.non_ckpt_run_log_path = f"fixtures/LDA/2021091415-lda-k3-it3-ci-1-wikipedia.log"
+        self.ckpt_run_log_path = f"fixtures/Analytics/2021091514-ana-crdd1-ect.log"
+        self.non_ckpt_run_log_path = f"fixtures/Analytics/2021091514-ana-crdd0-ect.log"
 
     def test_get_tc(self):
         if self.em.get_has_checkpoint():

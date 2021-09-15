@@ -3,9 +3,11 @@
   https://www.benchcouncil.org/BigDataBench/index.html
  */
 package de.tu_berlin.dos.arm.spark_utils.jobs
-import org.apache.spark.sql.functions._
-import org.apache.spark.{SparkConf, SparkContext}
+
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types._
+import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop.exceptions.ScallopException
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
@@ -23,12 +25,14 @@ object Analytics {
     val execCal = Calendar.getInstance
     val checkpointTime = form.format(execCal.getTime)
 
+    val sampleSeed = 42
+
     val sparkConf = new SparkConf()
       .setAppName(appSignature)
       .setMaster(master)
 
     val sparkContext = new SparkContext(sparkConf)
-    sparkContext.setCheckpointDir("../checkpoints/"+ appSignature +"/" + checkpointTime + "/")
+    sparkContext.setCheckpointDir("../checkpoints/" + appSignature + "/" + checkpointTime + "/")
 
     val spark = SparkSession
       .builder()
@@ -36,47 +40,58 @@ object Analytics {
       .appName(appSignature)
       .getOrCreate()
 
-    val orderItems = spark.read.options(Map("header" -> "true", "delimiter" -> "\t", "inferSchema" -> "true")).csv(conf.orderItemsInput())
-    val orders = spark.read.options(Map("header" -> "true", "delimiter" -> "\t", "inferSchema" -> "true")).csv(conf.ordersInput())
+    val orderItemsSchema = StructType(Array(
+      StructField("ORDER_ID", IntegerType), // not sure about the which one is first
+      StructField("ITEM_ID", IntegerType),
+      StructField("GOODS_ID", IntegerType),
+      StructField("GOODS_NUMBER", DoubleType),
+      StructField("SHOP_PRICE", DoubleType),
+      StructField("GOODS_PRICE", DoubleType),
+      StructField("GOODS_AMOUNT", DoubleType)
+    )
+    )
+
+    val orderSchema = StructType(Array(
+      StructField("ORDER_ID", IntegerType),
+      StructField("ORDER_CODE", LongType),
+      StructField("ORDER_DATE", DateType)
+    ))
+
+    val orderItems = spark.read
+      .options(Map("delimiter" -> "|"))
+      .schema(orderItemsSchema)
+      .csv(conf.orderItemsInput())
+      .sample(fraction = conf.samplingFraction(), seed = sampleSeed)
+
+    val orders = spark.read
+      .options(Map("delimiter" -> "|"))
+      .schema(orderSchema)
+      .csv(conf.ordersInput())
+      .sample(fraction = conf.samplingFraction(), seed = sampleSeed)
+
+
     println("Starting Analytics...")
-    println("Orders schema: "+orders.schema)
-    orders.summary().show()
-    println("orderItems schema: "+orderItems.schema)
-    orderItems.summary().show()
+
     // This import is needed to use the $-notation
     import spark.implicits._
 
     // random analytics workload
     var df = orders.join(orderItems, usingColumn = "ORDER_ID")
+
     if (conf.checkpointRdd().equals(1)) {
       println("Checkpointing the DataFrame...")
       df.checkpoint()
     }
-    var df1 = df.filter($"GOODS_ID".like("1018544"))
-    var df2 = df.filter($"GOODS_ID".like("1016104"))
 
-    // if any of the aggregations fail the join does not need to be repeated
-    df1 = df1.groupBy($"BUYER_ID", $"GOODS_ID", $"SHOP_PRICE").agg(
-      min($"GOODS_PRICE").alias("MIN_GOODS_PRICE"),
-      mean($"GOODS_PRICE").alias("MEAN_GOODS_PRICE"),
-      max($"GOODS_PRICE").alias("MAX_GOODS_PRICE"),
-      min($"GOODS_AMOUNT").alias("MIN_GOODS_AMOUNT"),
-      mean($"GOODS_AMOUNT").alias("MEAN_GOODS_AMOUNT"),
-      max($"GOODS_AMOUNT").alias("MAX_GOODS_AMOUNT")
-    ).orderBy($"SHOP_PRICE".desc_nulls_last, $"BUYER_ID".desc_nulls_last)
+    // Get the 5 most recent and expensive orders
+    df = df.groupBy($"ORDER_ID", $"ORDER_DATE").agg(
+      sum($"GOODS_PRICE").alias("SUM_GOODS_PRICE")
+    ).orderBy($"SUM_GOODS_PRICE".desc_nulls_last, $"ORDER_DATE".desc_nulls_last)
 
-
-    df2 = df2.groupBy($"CREATE_DT", $"CREATE_IP", $"PAY_DT").agg(
-      sum($"GOODS_PRICE").alias("SUM_GOODS_PRICE"),
-      count($"GOODS_AMOUNT").alias("COUNT_GOODS_AMOUNT"),
-      avg($"GOODS_PRICE").alias("AVG_GOODS_PRICE")
-    ).orderBy($"CREATE_DT".asc_nulls_last, $"PAY_DT".asc_nulls_last)
-
-    val unionDf = df1.unionByName(df2, allowMissingColumns = true)
-
-    unionDf.show()
+    df.show(5)
 
     spark.stop()
+
     println("Finished Analytics.")
   }
 
@@ -89,6 +104,9 @@ class AnalyticsArgs(a: Seq[String]) extends ScallopConf(a) {
 
   val ordersInput: ScallopOption[String] = trailArg[String](required = true, name = "<ordersInput>",
     descr = "Order input file").map(_.toLowerCase)
+
+  val samplingFraction: ScallopOption[Double] = opt[Double](noshort = true, default = Option(0.001),
+    descr = "Whether to checkpoint the RDD before aggregation or not")
 
   // interpreted as boolean
   val checkpointRdd: ScallopOption[Int] = opt[Int](noshort = true, default = Option(0),
