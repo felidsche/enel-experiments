@@ -25,7 +25,7 @@ do
     --master local \
     --driver-java-options "-Dlog4j.configuration=file:/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/conf/log4j.properties" \
     spark_utils/target/runtime-adjustments-experiments-1.0-SNAPSHOT-jar-with-dependencies.jar \
-    --iterations 10 --checkpoint "$checkpoint" --checkpoint-interval 2 ../samples/GBT.txt
+    --iterations 10 --checkpoint "$checkpoint" --checkpoint-interval 2 samples/GBT.txt
 
   # wait for the history server
   sleep 10
@@ -41,8 +41,8 @@ do
     --class de.tu_berlin.dos.arm.spark_utils.jobs.LDAWorkload \
     --master local \
     --driver-java-options "-Dlog4j.configuration=file:/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/conf/log4j.properties" \
-    target/runtime-adjustments-experiments-1.0-SNAPSHOT-jar-with-dependencies.jar \
-    --k 3 --iterations 3 --checkpoint "$checkpoint" --checkpoint-interval 1 ../samples/wikipedia-corpus.txt ../samples/stopwords.txt
+    spark_utils/target/runtime-adjustments-experiments-1.0-SNAPSHOT-jar-with-dependencies.jar \
+    --k 3 --iterations 3 --checkpoint "$checkpoint" --checkpoint-interval 1 samples/wikipedia-corpus.txt samples/stopwords.txt
 
   # wait for the history server
   sleep 10

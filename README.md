@@ -8,6 +8,7 @@ Experiment to collect MTTR and Tc for sample workloads:
     cd spark_utils
     mvn clean package
     $SPARK_HOME/sbin/start-history-server.sh # localhost:18080
+    cd ..
   ```
 ## Usage
 ````bash 
