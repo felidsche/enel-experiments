@@ -17,19 +17,20 @@ import java.util.Calendar
 object LDAWorkload {
 
   def main(args: Array[String]): Unit = {
+    val appSignature = "LDA"
 
     val sparkConf = new SparkConf()
-      .setAppName("LDA")
+      .setAppName(appSignature)
       .setMaster("local") // TODO: remove before cluter execution
 
     val sparkContext = new SparkContext(sparkConf)
 
     val form = new SimpleDateFormat("dd.MM.yyyy_HH:MM:SS");
     val execCal = Calendar.getInstance
-    val executionDate = form.format(execCal.getTime);
+    val checkpointTime = form.format(execCal.getTime);
 
 
-    sparkContext.setCheckpointDir("checkpoints/LDA/" + executionDate + "/")
+    sparkContext.setCheckpointDir("checkpoints/" + appSignature + "/" + checkpointTime + "/")
 
     val spark = SparkSession
       .builder
@@ -37,7 +38,8 @@ object LDAWorkload {
       .getOrCreate()
 
     val conf = new LDAArgs(args)
-    // ?
+
+    // This import is needed to use the $-notation
     import spark.implicits._
 
     println("Load and preprocess data...")
@@ -67,7 +69,11 @@ object LDAWorkload {
     println(s"actualNumTokens: $actualNumTokens")
 
     val lda = new LDA()
-      .setCheckpointInterval(conf.checkpointInterval()) // defines after how many iterations to checkpoint)
+
+    if (conf.checkpoint().equals(1)) {
+      println("Checkpointing LDA every" + conf.checkpointInterval() + " iterations...")
+      lda.setCheckpointInterval(conf.checkpointInterval()) // defines after how many iterations to checkpoint
+    }
     val optimizer = new EMLDAOptimizer
 
     lda.setOptimizer(optimizer)
@@ -108,6 +114,10 @@ class LDAArgs(a: Seq[String]) extends ScallopConf(a) {
   val k: ScallopOption[Int] = opt[Int](required = true, descr = "Amount of clusters")
   val iterations: ScallopOption[Int] = opt[Int](noshort = true, default = Option(100),
     descr = "Amount of LDA iterations")
+
+  // interpreted as boolean
+  val checkpoint: ScallopOption[Int] = opt[Int](noshort = true, default = Option(0),
+    descr = "Whether to checkpoint LDA every `checkpointInterval` iterations or not")
 
   // -1 disables checkpointing
   val checkpointInterval: ScallopOption[Int] = opt[Int](noshort = true, default = Option(-1),

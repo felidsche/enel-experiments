@@ -14,7 +14,7 @@
     --master local \
     --driver-java-options "-Dlog4j.configuration=file:/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/conf/log4j.properties" \
     target/runtime-adjustments-experiments-1.0-SNAPSHOT-jar-with-dependencies.jar \
-    --iterations 1000 --checkpoint-interval 5 ../samples/GBT.txt
+    --iterations 100 --checkpoint 1 --checkpoint-interval 2 ../../../../samples/GBT.txt
     ```
     2. KMeans
     ```bash
@@ -32,7 +32,7 @@
     --master local \
     --driver-java-options "-Dlog4j.configuration=file:/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/conf/log4j.properties" \
     target/runtime-adjustments-experiments-1.0-SNAPSHOT-jar-with-dependencies.jar \
-    --k 10 --iterations 50 --checkpoint-interval 5 ../samples/wikipedia-corpus.txt ../samples/stopwords.txt
+    --k 3 --iterations 3 --checkpoint 1 --checkpoint-interval 1 ../../../../samples/wikipedia-corpus.txt ../../../../samples/stopwords.txt
     ```
     4. Analytics
     ```bash

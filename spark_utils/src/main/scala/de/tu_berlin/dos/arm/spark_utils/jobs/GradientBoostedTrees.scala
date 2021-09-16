@@ -28,7 +28,7 @@ object GradientBoostedTrees {
       .setMaster("local") // TODO: remove before cluter execution
 
     val sparkContext = new SparkContext(sparkConf)
-    sparkContext.setCheckpointDir("checkpoints/GBT/" + checkpointTime + "/")
+    sparkContext.setCheckpointDir("checkpoints/" + appSignature + "/" + checkpointTime + "/")
 
     val spark = SparkSession
       .builder
@@ -56,7 +56,12 @@ object GradientBoostedTrees {
       .setLabelCol("label")
       .setFeaturesCol("features")
       .setMaxIter(conf.iterations())
-      .setCheckpointInterval(conf.checkpointInterval()) // defines after how many iterations to checkpoint
+
+    if (conf.checkpoint().equals(1)) {
+        println("Checkpointing GBT every" + conf.checkpointInterval() + " iterations...")
+        gbt.setCheckpointInterval(conf.checkpointInterval()) // defines after how many iterations to checkpoint
+    }
+
 
     val pipeline = new Pipeline()
       .setStages(Array(featureIndexer, gbt))
@@ -91,7 +96,11 @@ class GradientBoostedTreesArgs(a: Seq[String]) extends ScallopConf(a) {
   val iterations: ScallopOption[Int] = opt[Int](noshort = true, default = Option(100),
     descr = "Amount of iterations")
 
-  val checkpointInterval: ScallopOption[Int] = opt[Int](noshort = true, default = Option(10),
+  // interpreted as boolean
+  val checkpoint: ScallopOption[Int] = opt[Int](noshort = true, default = Option(0),
+    descr = "Whether to checkpoint GBT every `checkpointInterval` iterations or not")
+
+  val checkpointInterval: ScallopOption[Int] = opt[Int](noshort = true, default = Option(-1),
     descr = "Interval of checkpoints")
 
 
