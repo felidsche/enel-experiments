@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.tu_berlin.dos.arm</groupId>
-    <artifactId>runtime-adjustments-experiments</artifactId>
+    <artifactId>spark-checkpoint-workloads</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
