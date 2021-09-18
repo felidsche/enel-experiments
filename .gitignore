@@ -139,8 +139,6 @@ dmypy.json
 # OS
 .DS_Store
 
-# data samples
-samples
 
 # checkpoints
 checkpoints

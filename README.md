@@ -1,9 +1,12 @@
 # msc-thesis-saft-experiments
-Experiment to collect MTTR and Tc for sample workloads: 
-##Analytics of Big Data Bench e-com data
-##GBT regression on generated data
-##LDA clustering of Big Data Bench Wikipedia corpus
+###Experiment to collect MTTR and Tc for sample workloads: 
+- `Analytics` of Big Data Bench e-com data
+- GBT regression on generated data
+- `LDA` clustering of Big Data Bench Wikipedia corpus
+
 ## Prerequisites
+### versions
+
 - ``$SPARK_HOME`` should point to the spark installation
 ```bash
     pip install -r requirements.txt

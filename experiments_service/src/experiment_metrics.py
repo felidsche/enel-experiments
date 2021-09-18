@@ -2,6 +2,9 @@ import json
 import re
 import pandas as pd
 import requests
+import logging
+
+logger = logging.getLogger(__name__ + "ExperimentMetrics")  # holds the name of the module
 
 
 class ExperimentMetrics:
@@ -18,7 +21,7 @@ class ExperimentMetrics:
         try:
             data = json.loads(requests.get(url=hist_server_url + endpoint).content)
         except (json.JSONDecodeError, requests.exceptions.ConnectionError) as e:
-            print(f"{e} \n No values were returned, check the app_id")
+            logger.warning(f"{e}  No values were returned, check the app_id")
         return data
 
     def get_app_data(self, app_id) -> pd.DataFrame:
@@ -45,7 +48,7 @@ class ExperimentMetrics:
                                "index": "taskIndex", "launchTime": "taskLaunchTime"}, inplace=True)
             return df
         except KeyError as e:
-            print(f"{e}, No completed applications found!")
+            logger.warning(f"{e}, No completed applications found for app_id: {app_id}!")
             return stages_attempt_df
         # df.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage_and_task_data.csv",na_rep="nan")
 
@@ -61,7 +64,7 @@ class ExperimentMetrics:
                 next_stage_attempts = self.get_data(self.hist_server_url, endpoint=stages_attempt_endpoint)
                 stages_attempts.append(next_stage_attempts)
         except TypeError as e:
-            print(f"{e}, No completed applications found!")
+            logger.warning(f"{e}, No completed applications found for app_id: {app_id}!")
         return stages_attempts
 
     """
@@ -159,5 +162,5 @@ class ExperimentMetrics:
                     app_duration = attempt["duration"]
                     return app_duration
         if app_duration is None:
-            print("no duration was found for the given app_id")
+            logger.warning(f"no duration was found for the given app_id: {app_id}")
             return default
