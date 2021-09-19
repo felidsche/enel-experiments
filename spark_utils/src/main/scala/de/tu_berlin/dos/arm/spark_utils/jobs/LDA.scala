@@ -42,7 +42,8 @@ object LDAWorkload {
     // This import is needed to use the $-notation
     import spark.implicits._
 
-    println("Load and preprocess data...")
+    println("Start LDA Workload...")
+
     val stopWords: Array[String] = sparkContext.textFile(path = conf.inputStopWords()).collect().flatMap(_.stripMargin.split("\\s+"))
     val source: DataFrame = sparkContext.textFile(path = conf.inputCorpus()).toDF("docs")
     val tokenizer: RegexTokenizer = new RegexTokenizer().setInputCol("docs").setOutputCol("rawTokens")
@@ -100,6 +101,8 @@ object LDAWorkload {
         }
         println()
       }
+    println("Finish LDA Workload...")
+
     sparkContext.stop()
   }
 }

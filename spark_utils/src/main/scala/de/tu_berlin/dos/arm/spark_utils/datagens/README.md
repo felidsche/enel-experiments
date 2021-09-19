@@ -20,3 +20,16 @@ cd Text_datagen
 # run the data generation for the model wiki_noSW_90_Sampling  <NO_FILES> <NO_LINES> <expectation words of each file> <OUTPUT_PATH>
 ./gen_text_data.sh wiki_noSW_90_Sampling 1 100 10000 gen_data/
 ```
+
+## PageRank
+- uses the Google graph
+- Parameters:
+- `-o`: Output graph file name (default:'graph.txt')
+- `-m`: Matrix (in Maltab notation) (default:'0.9 0.5; 0.5 0.1')
+- `-i`: Iterations of Kronecker product (default:5)
+- `-s`: Random seed (0 - time seed) (default:0)
+```bash
+cd Graph_datagen
+make
+./gen_kronecker_graph -o:google_g_16.txt -m:"0.8305 0.5573; 0.4638 0.3021"
+```

@@ -18,8 +18,12 @@ def get_log(path: str):
         return file.read()
 
 
-def write_results(app_data: pd.DataFrame, key: str, app_id: str):
-    filepath = f"experiments_service/output/{key}/{app_id}_stage_task_and_tc_data.csv"
+def write_results(app_data: pd.DataFrame, key: str, app_id: str, has_checkpoint: bool):
+    if has_checkpoint:
+        checkpoint_path = "checkpoint"
+    else:
+        checkpoint_path = "normal"
+    filepath = f"output/{key}/{app_id}_{checkpoint_path}.csv"
     logger.info(f"Writing results of {app_id} to {filepath}...")
     file_exists = exists(filepath)
     if not file_exists:
@@ -52,6 +56,7 @@ class ExperimentsRunner():
         self.fatjarfile_path = fatjarfile_path
         self.spark_home = spark_home
         self.history_server_url = history_server_url
+
     checkpoints = [0, 1]
 
     log_path = "/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/app-logs/app.log"
@@ -88,16 +93,11 @@ class ExperimentsRunner():
 
             # the key is the name of the class of the workload and the value is the program argument string
             workloads = {
-                "Analytics": f"--sampling-fraction 0.001 --checkpoint-rdd {checkpoint} samples/OS_ORDER_ITEM.txt samples/OS_ORDER.txt",
+                "Analytics": f"--sampling-fraction 0.01 --checkpoint-rdd {checkpoint} samples/OS_ORDER_ITEM.txt samples/OS_ORDER.txt",
                 "LDAWorkload": f"--k 3 --iterations 3 --checkpoint {checkpoint} --checkpoint-interval 1 samples/LDA_wiki_noSW_90_Sampling_1 samples/stopwords.txt",
-                "GradientBoostedTrees": f"--iterations 10 --checkpoint {checkpoint} --checkpoint-interval 5 samples/GBT.txt"
+                "GradientBoostedTrees": f"--iterations 10 --checkpoint {checkpoint} --checkpoint-interval 5 samples/GBT.txt",
+                "PageRank": f"--save-path output/ --checkpoint {checkpoint} samples/Google_genGraph_10.txt"
             }
-            """
-            # debug conf
-            workloads = {
-                "Analytics": f"--sampling-fraction 0.9 --checkpoint-rdd {checkpoint} /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER_ITEM.txt /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER.txt",
-            }
-            """
 
             for key, value in workloads.items():
                 spark_submit = self.get_spark_submit(workload=key, args=value, local=self.local)
@@ -107,7 +107,7 @@ class ExperimentsRunner():
 
                 has_checkpoint = bool(checkpoint)
                 app_id, metrics = self.get_metrics(has_checkpoint=has_checkpoint)
-                write_results(app_data=metrics, key=key, app_id=app_id)
+                write_results(app_data=metrics, key=key, app_id=app_id, has_checkpoint=has_checkpoint)
 
                 logger.info(f"Result: {metrics.head(3)}")
 

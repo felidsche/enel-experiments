@@ -43,6 +43,7 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
             self.assertIsNotNone(rdd_tcs.values(), "Keys are not present")
 
     def test_add_tc_to_app_data(self):
+        # TODO: what if there is more than one rdd in a task that was checkpointed?
         log = get_log(path=self.ckpt_run_log_path)
         app_id = self.em.get_app_id(log=log)
         app_data = self.em.get_app_data(app_id=app_id)

@@ -146,6 +146,7 @@ checkpoints
 # log and output
 log
 # output files
-experiments_service/output/LDAWorkload/*.csv
-experiments_service/output/GradientBoostedTrees/*.csv
-experiments_service/output/Analytics/*.csv
+output/LDAWorkload/*.csv
+output/GradientBoostedTrees/*.csv
+output/Analytics/*.csv
+output/PageRank/*.csv
