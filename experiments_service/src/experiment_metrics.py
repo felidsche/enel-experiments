@@ -30,7 +30,7 @@ class ExperimentMetrics:
         For an app, get the stages and tasks of each job
         Note: The job data is skipped to get the stages and tasks
         :param app_id:
-        :return:
+        :return: pd.DataFrame with stageId as index
         """
         stages_attempt_data = self.get_stages_attempt_data(app_id=app_id)
         stages_attempt_df = pd.DataFrame(stages_attempt_data).stack().apply(pd.Series).reset_index()
@@ -120,17 +120,29 @@ class ExperimentMetrics:
         # keys: rdd_ids, values: time for checkpoint
         return dict(zip(rdds, tcs))
 
+    def task_has_checkpoint(self, rddIds: pd.Series, checkpoint_rdds):
+        """
+        UDF to check if a task handled an RDD which was checkpointed
+        :param rddIds: the row (pd.Series) with a list of RDDs which were handled in a task
+        :param checkpoint_rdds: the list of RDDs which were actually checkpointed
+        :return: the rddId which was checkpointed
+        """
+        rdd = None
+        for rddId in rddIds:
+            if rddId in checkpoint_rdds:
+                rdd = rddId
+        return rdd
+
     def add_tc_to_app_data(self, rdd_tcs: dict, app_data: pd.DataFrame) -> pd.DataFrame:
-        # contains the rddId and the corresponding tc
+        # convert rdd_tcs dict to pandas dataframe
         rdd_tcs_df = pd.DataFrame.from_dict(rdd_tcs, orient="index", columns=["tcMs"]).reset_index()
         rdd_tcs_df.rename(columns={"index": "rddId"}, inplace=True)
-        # contains only the `stageId` were at least 1 rdd was checkpointed
-        rdd_tcs_unique_df = app_data.set_index("stageId").rddIds.apply(pd.Series) \
-            .stack().reset_index(0, name='rddId').merge(app_data) \
-            .merge(rdd_tcs_df, how='right').sort_values('rddId') \
-            .reset_index(drop=True)
-        # merge the records with tcMs into the initial df
-        app_data_tc = app_data.merge(rdd_tcs_unique_df[["rddId", "tcMs", "stageId"]], on="stageId", how="outer")
+        checkpoint_rdds = rdd_tcs.keys()
+        # add a column for rows with the ID where the checkpointed RDDs is in the column "rddIds" of app_data
+        app_data['rddId'] = app_data.rddIds.apply(
+            lambda rddIds: self.task_has_checkpoint(rddIds=rddIds, checkpoint_rdds=checkpoint_rdds))
+        # add the tcms by joining
+        app_data_tc = pd.merge(app_data, rdd_tcs_df, on="rddId", how="left")
         return app_data_tc
 
     def get_app_id(self, log: str) -> str:

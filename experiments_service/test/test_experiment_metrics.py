@@ -2,7 +2,8 @@ from unittest import TestCase
 
 import pandas as pd
 
-from experiment_metrics import ExperimentMetrics, get_log
+from experiment_metrics import ExperimentMetrics
+from run_experiments import get_log
 
 
 class TestExperimentMetrics(TestCase, ExperimentMetrics):
@@ -12,7 +13,7 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
 
     def __init__(self, methodName: str = ...):
         super().__init__(methodName)
-        self.ckpt_run_log_path = f"fixtures/Analytics/2021091514-ana-crdd1-ect.log"
+        self.ckpt_run_log_path = f"fixtures/Analytics/2021091911-ana-crdd1-etc-01sample-of1gb.log"
         self.non_ckpt_run_log_path = f"fixtures/Analytics/2021091514-ana-crdd0-ect.log"
 
     def test_get_tc(self):
@@ -42,7 +43,6 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
             self.assertIsNotNone(rdd_tcs.values(), "Keys are not present")
 
     def test_add_tc_to_app_data(self):
-        # this is very slow for large logs and needs improvement
         log = get_log(path=self.ckpt_run_log_path)
         app_id = self.em.get_app_id(log=log)
         app_data = self.em.get_app_data(app_id=app_id)
@@ -52,8 +52,9 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
         )
         app_data_tc = self.em.add_tc_to_app_data(rdd_tcs=rdd_tcs, app_data=app_data)
         self.assertIsInstance(app_data_tc, pd.DataFrame, "Not a pandas Dataframe")
+        # make sure that the "tcMs" column was added
         self.assertGreater(app_data_tc.shape[1], app_data.shape[1], "No columns were gained")
-        self.assertGreater(app_data_tc.shape[0], app_data.shape[0], "No rows were gained")
+        self.assertEquals(app_data_tc.shape[0], app_data.shape[0], "No rows were gained")
 
     def test_get_data(self):
 

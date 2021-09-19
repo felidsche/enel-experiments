@@ -52,7 +52,6 @@ class ExperimentsRunner():
         self.fatjarfile_path = fatjarfile_path
         self.spark_home = spark_home
         self.history_server_url = history_server_url
-
     checkpoints = [0, 1]
 
     log_path = "/Users/fschnei4/spark-3.1.2-bin-hadoop3.2/app-logs/app.log"
@@ -93,6 +92,12 @@ class ExperimentsRunner():
                 "LDAWorkload": f"--k 3 --iterations 3 --checkpoint {checkpoint} --checkpoint-interval 1 samples/LDA_wiki_noSW_90_Sampling_1 samples/stopwords.txt",
                 "GradientBoostedTrees": f"--iterations 10 --checkpoint {checkpoint} --checkpoint-interval 5 samples/GBT.txt"
             }
+            """
+            # debug conf
+            workloads = {
+                "Analytics": f"--sampling-fraction 0.9 --checkpoint-rdd {checkpoint} /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER_ITEM.txt /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER.txt",
+            }
+            """
 
             for key, value in workloads.items():
                 spark_submit = self.get_spark_submit(workload=key, args=value, local=self.local)
