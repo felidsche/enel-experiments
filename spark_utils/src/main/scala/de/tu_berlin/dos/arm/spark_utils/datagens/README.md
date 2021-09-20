@@ -21,6 +21,17 @@ cd Text_datagen
 ./gen_text_data.sh wiki_noSW_90_Sampling 1 100 10000 gen_data/
 ```
 
+## GBT
+- creates matrix data in `.csv` format: `label, feature1, feature2, featureN`
+- Usage: `SGDDataGenerator` on HDFS 
+``` bash
+SGDDataGenerator <samples> <dimension> <output> <defaultHdfsFs>
+```
+- Usage: `SGDDataGeneratorLocal` (creates) `samples/sgd.txt` 
+```bash
+SGDDataGeneratorLocal <samples> <dimension> <output>
+```
+
 ## PageRank
 - uses the Google graph
 - Parameters:

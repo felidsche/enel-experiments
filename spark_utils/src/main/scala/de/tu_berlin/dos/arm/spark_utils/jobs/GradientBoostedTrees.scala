@@ -2,9 +2,11 @@ package de.tu_berlin.dos.arm.spark_utils.jobs
 
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.evaluation.RegressionEvaluator
-import org.apache.spark.ml.feature.VectorIndexer
+import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.regression.{GBTRegressionModel, GBTRegressor}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop.exceptions.ScallopException
 import org.rogach.scallop.{ScallopConf, ScallopOption}
@@ -36,20 +38,28 @@ object GradientBoostedTrees {
       .getOrCreate()
 
 
-    println("Start GBT training...")
+    println("Start GBT Workload...")
 
     // we need DataFrames since Checkpoints are not available with RDD based MLLlib
-    val data = spark.read.format("libsvm").load(conf.input())
+    var data = spark.read.format("csv")
+      .option("delimiter", ",")
+      .load(conf.input())
+      .toDF()
 
-    val featureIndexer = new VectorIndexer()
-      .setInputCol("features")
-      .setOutputCol("indexedFeatures")
-      .setMaxCategories(4)
-      .fit(data)
+    // cast all columns to Double
+    data = data.select(data.columns.map(c => col(c).cast(DoubleType)): _*)
+
+    // rename the first column to be the "label" column
+    data = data.withColumnRenamed("_c0", "label")
+    // compose a vector from all columns except the label (first one)
+    val featureColumns = data.columns.drop(1)
+
+    val assembler = new VectorAssembler()
+      .setInputCols(featureColumns)
+      .setOutputCol("features")
 
     // Split the data into training and test sets (30% held out for testing).
     val Array(trainingData, testData) = data.randomSplit(Array(0.7, 0.3))
-
 
     // Train a GradientBoostedTrees model.
     val gbt = new GBTRegressor()
@@ -58,13 +68,13 @@ object GradientBoostedTrees {
       .setMaxIter(conf.iterations())
 
     if (conf.checkpoint().equals(1)) {
-        println("Checkpointing GBT every" + conf.checkpointInterval() + " iterations...")
-        gbt.setCheckpointInterval(conf.checkpointInterval()) // defines after how many iterations to checkpoint
+      println("Checkpointing GBT every" + conf.checkpointInterval() + " iterations...")
+      gbt.setCheckpointInterval(conf.checkpointInterval()) // defines after how many iterations to checkpoint
     }
 
 
     val pipeline = new Pipeline()
-      .setStages(Array(featureIndexer, gbt))
+      .setStages(Array(assembler, gbt))
 
     val model = pipeline.fit(trainingData)
 
