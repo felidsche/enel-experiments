@@ -33,6 +33,7 @@ SGDDataGeneratorLocal <samples> <dimension> <output>
 ```
 
 ## PageRank
+- **Note**: this is only tested on Ubuntu 20.04, it doesnt work on MacOS Catalina
 - uses the Google graph
 - Parameters:
 - `-o`: Output graph file name (default:'graph.txt')
@@ -41,6 +42,5 @@ SGDDataGeneratorLocal <samples> <dimension> <output>
 - `-s`: Random seed (0 - time seed) (default:0)
 ```bash
 cd Graph_datagen
-make
 ./gen_kronecker_graph -o:google_g_16.txt -m:"0.8305 0.5573; 0.4638 0.3021"
 ```

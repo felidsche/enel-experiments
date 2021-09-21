@@ -79,9 +79,9 @@ object PageRank {
 
     println("Finish PageRank Workload...")
 
-    //TODO: make this work
     /* show results
     println("Result saved to: " + save_path)
+    // save as TextFile only works on HDFS
     ranks.saveAsTextFile(path = "file:///" + save_path)
     */
   }
