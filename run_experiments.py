@@ -94,9 +94,9 @@ class ExperimentsRunner():
             # the key is the name of the class of the workload and the value is the program argument string
             workloads = {
                 "Analytics": f"--sampling-fraction 0.01 --checkpoint-rdd {checkpoint} samples/OS_ORDER_ITEM.txt samples/OS_ORDER.txt",
-                "LDAWorkload": f"--k 3 --iterations 3 --checkpoint {checkpoint} --checkpoint-interval 1 samples/LDA_wiki_noSW_90_Sampling_1 samples/stopwords.txt",
+                "LDAWorkload": f"--k 3 --iterations 10 --checkpoint {checkpoint} --checkpoint-interval 1 samples/LDA_wiki_noSW_90_Sampling_1 samples/stopwords.txt",
                 "GradientBoostedTrees": f"--iterations 10 --checkpoint {checkpoint} --checkpoint-interval 5 samples/sgd.txt",
-                "PageRank": f"--save-path output/ --checkpoint {checkpoint} samples/Google_genGraph_10.txt"
+                "PageRank": f"--save-path output/ --iterations 10 --checkpoint {checkpoint} samples/google_g_16.txt"
             }
 
             for key, value in workloads.items():

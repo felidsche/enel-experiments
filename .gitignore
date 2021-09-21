@@ -145,8 +145,15 @@ checkpoints
 
 # log and output
 log
+
 # output files
 output/LDAWorkload/*.csv
 output/GradientBoostedTrees/*.csv
 output/Analytics/*.csv
 output/PageRank/*.csv
+
+# actual cluster data
+cluster_data/*.txt
+
+# config file for the cluster
+.hdfscli.cfg
