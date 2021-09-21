@@ -1,5 +1,6 @@
 package de.tu_berlin.dos.arm.spark_utils.jobs
 
+import org.apache.parquet.filter2.predicate.Operators.Column
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.feature.VectorAssembler
@@ -37,21 +38,48 @@ object GradientBoostedTrees {
       .appName(appSignature)
       .getOrCreate()
 
+    val schema = new StructType(Array(
+      StructField("label", StringType),
+      StructField("features", StringType),
+      )
+    )
 
     println("Start GBT Workload...")
 
     // we need DataFrames since Checkpoints are not available with RDD based MLLlib
     var data = spark.read.format("csv")
       .option("delimiter", ",")
+      .schema(schema)
       .load(conf.input())
-      .toDF()
 
+    // This import is needed to use the $-notation
+    import spark.implicits._
+
+    // split the features string by whitespace
+    data = data.withColumn(
+      "features_split",
+      split(col("features"), pattern=" ")
+    )
+
+    // count the number of features
+    val numFeatures = data
+      .withColumn("numFeatures", size($"features_split"))
+      .agg(max($"numFeatures"))
+      .head()
+      .getInt(0)
+
+    /*
+     select 1 column per feature and keep the label col
+    https://stackoverflow.com/questions/39255973/split-1-column-into-3-columns-in-spark-scala
+     */
+    data = data.select(col("label")+:(0 until numFeatures).map(i => $"features_split".getItem(i).as(s"feature$i")): _*)
+
+    data.show()
+    data.printSchema()
     // cast all columns to Double
     data = data.select(data.columns.map(c => col(c).cast(DoubleType)): _*)
 
-    // rename the first column to be the "label" column
-    data = data.withColumnRenamed("_c0", "label")
-    // compose a vector from all columns except the label (first one)
+    // compose a vector from all columns except the label (first column)
     val featureColumns = data.columns.drop(1)
 
     val assembler = new VectorAssembler()

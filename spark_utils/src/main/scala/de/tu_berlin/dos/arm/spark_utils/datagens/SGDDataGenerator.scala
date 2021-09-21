@@ -40,8 +40,8 @@ object SGDDataGenerator {
       // generate a vandermatrix from x
       val vector = polyvander(x, n - 1)
 
-      // write to file in csv format (label, feature1, feature2, featureN)
-      os.writeBytes(label + "," + vector.mkString(",") + "\n")
+      // write to file in MLutils format (label, feature1 feature2 featureN)
+      os.writeBytes(label + "," + vector.mkString(" ") + "\n")
     }
 
     fs.close()
