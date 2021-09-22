@@ -11,10 +11,12 @@ class ExperimentMetrics:
 
     def __init__(
             self, has_checkpoint: bool = False,
-            hist_server_url: str = "http://localhost:18080/api/v1/"
+            hist_server_url: str = "http://localhost:18080/api/v1/",
+            local: bool = False
     ):
         self.has_checkpoint = has_checkpoint
         self.hist_server_url = hist_server_url
+        self.local = local
 
     def get_data(self, hist_server_url: str, endpoint: str) -> dict:
         data = {}
@@ -39,6 +41,9 @@ class ExperimentMetrics:
                 ["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks",
                  "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "rddIds",
                  "tasks"]]
+            # get the data on task granularity
+            logger.info(f"Getting the data for app_id: {app_id} on task granularity...")
+            # TODO: refactor this to work with large data
             tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(
                 level=-1).apply(
                 pd.Series).dropna(axis=0, how="all").reset_index(0)
@@ -122,7 +127,7 @@ class ExperimentMetrics:
 
     def task_has_checkpoint(self, rddIds: pd.Series, checkpoint_rdds):
         """
-        UDF to check if a task handled an RDD which was checkpointed
+        pandas UDF to check if a task handled an RDD which was checkpointed
         :param rddIds: the row (pd.Series) with a list of RDDs which were handled in a task
         :param checkpoint_rdds: the list of RDDs which were actually checkpointed
         :return: the rddId which was checkpointed
@@ -151,8 +156,14 @@ class ExperimentMetrics:
         :param log:
         :return: s
         """
-        pattern = r"(local-\d{1,})(\.inprogress)"
-        app_id_matches = self.get_matches_from_log(log=log, pattern=pattern, group=1)
+        if self.local:
+
+            pattern = r"(local-\d{1,})(\.inprogress)"
+            group = 1
+        else:
+            pattern = r"(\/job-event-log\/)(spark\-[\w\d]{1,})(\.inprogress)"
+            group = 2
+        app_id_matches = self.get_matches_from_log(log=log, pattern=pattern, group=group)
         app_id = app_id_matches[0]  # the first ID in the log is the actual App ID
         return app_id
 

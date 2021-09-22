@@ -145,7 +145,7 @@ dmypy.json
 checkpoints
 
 # log and output
-log
+log/*.log
 
 # output files
 output/LDAWorkload/*.csv

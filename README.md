@@ -34,8 +34,36 @@ root = /
      export HDFSCLI_CONFIG=$(pwd)/.hdfscli.cfg
     cd ..
   ```
-## Usage
-````bash 
-python run_experiments.py <LOCAL> # pass 1 if local execution is wanted
+## local execution
+
+- runs the workloads
+- captures the metrics
+- generates a csv
+### Usage
+````bash
+python <script_path> <local>
 ````
+### Example
+```bash
+python run_experiments.py 1  # bool
+```
+
+## remote execution
+- captures the metrics
+- generates a csv
+### Requirements
+- job ran on the cluster
+- VPN is activated (see above)
+- port forwarding of the spark history server is active:
+````bash
+kubectl port-forward service/spark-history-server-web  18081:18080  # localhost:cluster
+````
+### Usage
+````bash
+python <script_path> <local: 0/1> <app_name> <log_path> <has_checkpoint>
+````
+### Example
+```bash
+python run_experiments.py 0 GradientBoostedTrees cluster_experiment/logs/gbt/20210922/gbt-9000000-10-checkpoint-driver.log 1
+```
 
