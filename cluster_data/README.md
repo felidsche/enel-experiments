@@ -16,8 +16,4 @@ java -cp ../spark_utils/target/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-
 ````bash
 # Write a single file to HDFS.
 hdfscli upload sgd_1miosmp_50dim.txt spark/sgd/ -v
-with open('sgd_1miosmp_50dim.txt') as reader, CLIENT.write('spark/sgd/sgd_1miosmp_50dim.txt') as writer:
-  for line in reader:
-    if line.startswith('-'):
-      writer.write(line)
 ````

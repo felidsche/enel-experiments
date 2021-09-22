@@ -1,6 +1,5 @@
 package de.tu_berlin.dos.arm.spark_utils.jobs
 
-import org.apache.parquet.filter2.predicate.Operators.Column
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.feature.VectorAssembler
@@ -28,10 +27,11 @@ object GradientBoostedTrees {
 
     val sparkConf = new SparkConf()
       .setAppName(appSignature)
-      .setMaster("local") // TODO: remove before cluter execution
+      //.setMaster("local")
 
     val sparkContext = new SparkContext(sparkConf)
-    sparkContext.setCheckpointDir("checkpoints/" + appSignature + "/" + checkpointTime + "/")
+    //sparkContext.setCheckpointDir("checkpoints/" + appSignature + "/" + checkpointTime + "/")
+    sparkContext.setCheckpointDir("hdfs://checkpoints/" + appSignature + "/" + checkpointTime + "/")
 
     val spark = SparkSession
       .builder
@@ -68,14 +68,10 @@ object GradientBoostedTrees {
       .head()
       .getInt(0)
 
-    /*
-     select 1 column per feature and keep the label col
-    https://stackoverflow.com/questions/39255973/split-1-column-into-3-columns-in-spark-scala
-     */
+
+    // select 1 column per feature and keep the label col
     data = data.select(col("label")+:(0 until numFeatures).map(i => $"features_split".getItem(i).as(s"feature$i")): _*)
 
-    data.show()
-    data.printSchema()
     // cast all columns to Double
     data = data.select(data.columns.map(c => col(c).cast(DoubleType)): _*)
 
@@ -85,6 +81,7 @@ object GradientBoostedTrees {
     val assembler = new VectorAssembler()
       .setInputCols(featureColumns)
       .setOutputCol("features")
+      .setHandleInvalid("keep")
 
     // Split the data into training and test sets (30% held out for testing).
     val Array(trainingData, testData) = data.randomSplit(Array(0.7, 0.3))

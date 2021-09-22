@@ -6,6 +6,11 @@
 
 ## Prerequisites
 - VPN connection for operations on the DOS ARM cluster
+```bash
+export HOMEBREW_NO_AUTO_UPDATE=1
+brew install openvpn
+sudo openvpn --config <configfile>.ovpn --redirect-gateway
+  ```
 - create a configuration for the HDFS cluster
 ```bash
 touch .hdfscli.cfg
