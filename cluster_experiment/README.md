@@ -18,5 +18,5 @@ java -cp ../spark_utils/target/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-
 # Write a single jar to HDFS.
 hdfscli upload --alias=prod ../spark_utils/target/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-dependencies.jar jar-files/ -v
 # or with logging
-python hdfs_service upload http://domain:port user / jar_files/ ../spark_utils/target/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-dependencies.jar True
+python hdfs_service file_upload http://domain:port user / jar_files/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-dependencies.jar ../spark_utils/target/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-dependencies.jar True
 ````
