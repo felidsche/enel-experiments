@@ -27,9 +27,9 @@ spec:
     "spark.kubernetes.driver.annotation.prometheus.io/scrape": "true"
     "spark.kubernetes.driver.annotation.prometheus.io/path": "/metrics/prometheus/ | /metrics/executors/prometheus/"
     "spark.kubernetes.driver.annotation.prometheus.io/port": "4040"
-  mainClass: de.tuberlin.cit.jobs.v2.KMeans
-  mainApplicationFile: hdfs:///jar-files/runtime-adjustments-experiments-1.0-SNAPSHOT-jar-with-dependencies.jar
-  arguments: [ "--iterations", "10", "--k", "8",  "hdfs:///spark/kmeans/1364000000_8.txt"]
+  mainClass: de.tu_berlin.dos.arm.spark_utils.jobs.GradientBoostedTrees
+  mainApplicationFile: hdfs:///jar-files/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-dependencies.jar
+  arguments: [ "--iterations", "20", "--checkpoint", "1", "--checkpoint-interval", "5", "hdfs:///spark/sgd/small.txt"]
   sparkVersion: "3.0.0"
   restartPolicy:
     type: Never

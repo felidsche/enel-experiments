@@ -8,6 +8,26 @@ logging.basicConfig(level=logging.INFO, filename=f"../log/HDFSService.log",
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
+def main(op: str):
+    url = sys.argv[2]
+    user = sys.argv[3]
+    root = sys.argv[4]
+    client = InsecureClient(url=url, user=user, root=root)
+    hdfs_service = HdfsService(client=client)
+    hdfs_path = sys.argv[5]
+    if op == "file_upload":
+        file_path = sys.argv[6]
+        try:
+            overwrite = bool(sys.argv[7])
+        except IndexError:
+            print("overwrite defaults to False")
+            overwrite = False
+        hdfs_service.upload_file_to_hdfs(local_path=file_path, hdfs_path=hdfs_path, overwrite=overwrite)
+
+    if op == "mkdir":
+        hdfs_service.create_dir_on_hdfs(hdfs_path=hdfs_path)
+
+
 class HdfsService():
     def __init__(self, client):
         self.client = client
@@ -25,24 +45,16 @@ class HdfsService():
         self.client.upload(hdfs_path=hdfs_path, local_path=local_path, overwrite=overwrite)
         logging.info(f"Finished Uploading file from: {local_path} to: {hdfs_path} overwrite? {overwrite}")
 
+    def create_dir_on_hdfs(self, hdfs_path: str):
+        logging.info(f"Creating a directory at: {hdfs_path}")
+        self.client.makedirs(hdfs_path=hdfs_path)
+        logging.info(f"Finished creating a directory at: {hdfs_path}")
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 5:
-        print("5 args are required")
-        print("Usage: <operation: download/file_upload> <hdfs url> <hdfs user> <hdfs root dir> <hdfs file path>"
+        print("minimum 5 args are required")
+        print("Usage: <operation: file_upload/mkdir> <hdfs url> <hdfs user> <hdfs root dir> <hdfs file path>"
               "<local file path> <overwrite: True/False> (all string)")
     operation = sys.argv[1]
-    url = sys.argv[2]
-    user = sys.argv[3]
-    root = sys.argv[4]
-    hdfs_path = sys.argv[5]
-    client = InsecureClient(url=url, user=user, root=root)
-    hdfs_service = HdfsService(client=client)
-    if operation == "file_upload":
-        file_path = sys.argv[6]
-        try:
-            overwrite = bool(sys.argv[7])
-        except IndexError:
-            print("overwrite defaults to False")
-            overwrite = False
-        hdfs_service.upload_file_to_hdfs(local_path=file_path, hdfs_path=hdfs_path, overwrite=overwrite)
+    main(op=operation)
