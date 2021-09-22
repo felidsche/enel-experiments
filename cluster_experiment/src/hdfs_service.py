@@ -4,7 +4,7 @@ import sys
 from hdfs import InsecureClient
 
 logger = logging.getLogger(__name__)  # holds the name of the module
-logging.basicConfig(level=logging.INFO, filename=f"../log/HDFSService.log",
+logging.basicConfig(level=logging.INFO, filename=f"../../log/HDFSService.log",
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 

@@ -31,7 +31,7 @@ object GradientBoostedTrees {
 
     val sparkContext = new SparkContext(sparkConf)
     //sparkContext.setCheckpointDir("checkpoints/" + appSignature + "/" + checkpointTime + "/")
-    sparkContext.setCheckpointDir("hdfs://130.149.249.46:9000/checkpoints/felix-schneider-thesis")
+    sparkContext.setCheckpointDir("hdfs://ip:port/checkpoints/felix-schneider-thesis") //TODO: change this
 
     val spark = SparkSession
       .builder
