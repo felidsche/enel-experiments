@@ -3,7 +3,7 @@ from unittest import TestCase
 import pandas as pd
 
 from experiment_metrics import ExperimentMetrics
-from run_experiments import get_log
+from experiments_runner.src.run_experiments import get_log
 
 
 class TestExperimentMetrics(TestCase, ExperimentMetrics):

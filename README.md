@@ -45,7 +45,7 @@ python <script_path> <local>
 ````
 ### Example
 ```bash
-python run_experiments.py 1  # bool
+python experiments_runner/src/run_experiments.py 1  # bool
 ```
 
 ## remote execution
@@ -64,6 +64,6 @@ python <script_path> <local: 0/1> <app_name> <log_path> <has_checkpoint>
 ````
 ### Example
 ```bash
-python run_experiments.py 0 GradientBoostedTrees cluster_experiment/logs/gbt/20210922/gbt-9000000-10-checkpoint-driver.log 1
+python experiments_runner/src/run_experiments.py 0 GradientBoostedTrees cluster_experiment/logs/gbt/20210922/gbt-9000000-10-checkpoint-driver.log 1
 ```
 

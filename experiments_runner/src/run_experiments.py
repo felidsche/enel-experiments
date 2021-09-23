@@ -1,12 +1,14 @@
 # run Batch workload without and with checkpoint
+import logging
 import os
 import subprocess
+import sys
 import time
 from _ast import Tuple
 from os.path import exists
-import sys
+
 import pandas as pd
-import logging
+
 from experiments_service.src.experiment_metrics import ExperimentMetrics
 
 logger = logging.getLogger(__name__ + "ExperimentRunner")  # holds the name of the module
@@ -16,26 +18,6 @@ def get_log(path: str):
     logger.info(f"Getting log from: {path}...")
     with open(path, mode="r") as file:
         return file.read()
-
-
-def write_results(app_data: pd.DataFrame, key: str, app_id: str, has_checkpoint: bool):
-    if has_checkpoint:
-        checkpoint_path = "checkpoint"
-    else:
-        checkpoint_path = "normal"
-
-    if local:
-        mode = "local"
-    else:
-        mode = "cluster"
-    filepath = f"output/{mode}/{key}/{app_id}_{checkpoint_path}.csv"
-    logger.info(f"Writing results of {app_id} to {filepath}...")
-    file_exists = exists(filepath)
-    if not file_exists:
-        app_data.to_csv(
-            path_or_buf=filepath,
-            na_rep="nan"
-        )
 
 
 def execute_command(commands: list, local: bool):
@@ -49,7 +31,7 @@ def execute_command(commands: list, local: bool):
         time.sleep(10)
 
 
-class ExperimentsRunner():
+class ExperimentsRunner:
 
     def __init__(self, local: bool, spark_home: str = "/Users/fschnei4/spark-3.1.2-bin-hadoop3.2",
                  jobs_classpath: str = "de.tu_berlin.dos.arm.spark_utils.jobs",
@@ -82,35 +64,52 @@ class ExperimentsRunner():
                        ] + args.split(" ")
         return spark_submit
 
-    def run_local(self):
+    def write_results(self, app_data: pd.DataFrame, key: str, app_id: str, has_checkpoint: bool):
+        if has_checkpoint:
+            checkpoint_path = "checkpoint"
+        else:
+            checkpoint_path = "normal"
+
+        if self.local:
+            mode = "local"
+        else:
+            mode = "cluster"
+        file_dir = f"output/{mode}/{key}/"
+        file_name = f"{app_id}_{checkpoint_path}.csv"
+        file_path = f"{file_dir}/{file_name}"
+        logger.info(f"Writing results of {app_id} to {file_path}...")
+        file_exists = exists(file_path)
+        dir_exists = exists(file_path)
+        if not file_exists and dir_exists:
+            app_data.to_csv(
+                path_or_buf=file_path,
+                na_rep="nan"
+            )
+        else:
+            logger.warning(f"No output is written because either the file: {file_name} exists already in: {file_dir} OR {file_dir} does not exist")
+        return file_path
+
+    def run_local(self, workloads: dict) -> str:
         logger.info("""
             ########################################
             #   STARTING A NEW LOCAL EXPERIMENT    #
             ########################################
             """)
+        file_path = None
         if exists(self.log_path):
             logger.warning("There is still is an app.log file from a previous run, deleting it...")
             os.remove(self.log_path)
         for checkpoint in self.checkpoints:
-
-            # the key is the name of the class of the workload and the value is the program argument string
-            workloads = {
-                "Analytics": f"--sampling-fraction 0.01 --checkpoint-rdd {checkpoint} samples/OS_ORDER_ITEM.txt samples/OS_ORDER.txt",
-                "LDAWorkload": f"--k 3 --iterations 10 --checkpoint {checkpoint} --checkpoint-interval 1 samples/LDA_wiki_noSW_90_Sampling_1 samples/stopwords.txt",
-                "GradientBoostedTrees": f"--iterations 10 --checkpoint {checkpoint} --checkpoint-interval 5 samples/sgd.txt",
-                "PageRank": f"--save-path output/ --iterations 10 --checkpoint {checkpoint} samples/google_g_16.txt"
-            }
-
             for key, value in workloads.items():
                 spark_submit = self.get_spark_submit(workload=key, args=value)
-                logger.info(f"Runing workload: {key}  with args: {value}  locally: {local}")
+                logger.info(f"Runing workload: {key}  with args: {value}  locally: {self.local}")
                 # execute the spark_submit command
                 execute_command(commands=spark_submit, local=self.local)
 
                 has_checkpoint = bool(checkpoint)
                 app_id, metrics = self.get_metrics(has_checkpoint=has_checkpoint,
                                                    hist_server_url=self.history_server_url)
-                write_results(app_data=metrics, key=key, app_id=app_id, has_checkpoint=has_checkpoint)
+                file_path = self.write_results(app_data=metrics, key=key, app_id=app_id, has_checkpoint=has_checkpoint)
 
                 logger.info(f"Result: {metrics.head(3)}")
 
@@ -122,6 +121,7 @@ class ExperimentsRunner():
             #           LOCAL EXPERIMENT DONE      #
             ########################################
             """)
+        return file_path
 
     def get_metrics(self, has_checkpoint: bool, hist_server_url: str) -> Tuple(str, pd.DataFrame):
         logger.info(f"Getting metrics from Spark Application  checkpoint: {has_checkpoint}")
@@ -146,7 +146,7 @@ class ExperimentsRunner():
 
         return app_id, app_data_tc
 
-    def run_remote(self, has_checkpoint: bool, app_name: str):
+    def run_remote(self, has_checkpoint: bool, app_name: str) -> str:
         logger.info("""
             ########################################
             #   STARTING A NEW REMOTE EXPERIMENT   #
@@ -154,7 +154,7 @@ class ExperimentsRunner():
             """)
 
         app_id, metrics = self.get_metrics(hist_server_url=self.history_server_url, has_checkpoint=has_checkpoint)
-        write_results(app_data=metrics, key=app_name, app_id=app_id, has_checkpoint=has_checkpoint)
+        file_path = write_results(app_data=metrics, key=app_name, app_id=app_id, has_checkpoint=has_checkpoint)
 
         logger.info(f"Result: {metrics.head(3)}")
 
@@ -163,13 +163,13 @@ class ExperimentsRunner():
             #           REMOTE EXPERIMENT DONE     #
             ########################################
             """)
-        pass
+        return file_path
 
 
 if __name__ == '__main__':
     import logging.config
 
-    logging.basicConfig(level=logging.INFO, filename=f"log/ExperimentRunner.log",
+    logging.basicConfig(level=logging.INFO, filename=f"../../log/ExperimentRunner.log",
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     local = bool(int(sys.argv[1]))

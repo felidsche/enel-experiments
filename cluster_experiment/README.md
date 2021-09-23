@@ -63,14 +63,18 @@ python src/hdfs_service.py mkdir http://domain:port user / checkpoints/felix-sch
 
 ## 6. safe the application driver log to local fs (to get the checkpoint data)
 ````bash
-kubectl logs pod/gbtsmall-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/gbt_small-app-driver-ckpt.log
+kubectl logs pod/gbtsmall-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/gbt_small-app-driver-checkpoint.log
 kubectl logs pod/gbt-9000000-10-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/logs/gbt-9000000-10-driver.log
 kubectl logs pod/gbt-9000000-10-checkpoint-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/gbt-9000000-10-checkpoint-driver.log
 ````
 
 ## 7. look at checkpoints 
 - ON HDFS: `/checkpoints/felix-schneider-thesis`
-- sadly no files <_<
+- sadly no files <_< (files only with `Analytics` workload)
   - spark app to folder mapping:
     - `spark-3c566556aa494a7e9f462949432186c2` (`gbt_small.yaml`): `a0c2a4ef-d78e-4449-b272-33e2eddb3472` 
     - `spark-5852506aefd747988e6e3e4545f09fbd` (`gbt_9000000_10_ckpt.yaml`): `52a40551-b920-4a3c-9d18-9df65874d2e0`, `c08bcafb-7ee3-483b-9c63-7a8b284c332c`
+
+## 8. delete `sparkapplication` from the cluster
+- show all `sparkapplications`: `kubectl get sparkapplications`
+- delete a certain `sparkapplication`: `kubectl delete sparkapplication <SparkApplication name>`
