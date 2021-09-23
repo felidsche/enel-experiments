@@ -158,3 +158,6 @@ cluster_data/*.txt
 
 # config file for the cluster
 .hdfscli.cfg
+
+# cached datasets
+*/cache/*

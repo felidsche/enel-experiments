@@ -86,7 +86,8 @@ class ExperimentsRunner:
                 na_rep="nan"
             )
         else:
-            logger.warning(f"No output is written because either the file: {file_name} exists already in: {file_dir} OR {file_dir} does not exist")
+            logger.warning(
+                f"No output is written because either the file: {file_name} exists already in: {file_dir} OR {file_dir} does not exist")
         return file_path
 
     def run_local(self, workloads: dict) -> str:
@@ -123,14 +124,15 @@ class ExperimentsRunner:
             """)
         return file_path
 
-    def get_metrics(self, has_checkpoint: bool, hist_server_url: str) -> Tuple(str, pd.DataFrame):
+    def get_metrics(self, has_checkpoint: bool, hist_server_url: str, cache_df_file_path: str = None) -> Tuple(str,
+                                                                                                               pd.DataFrame):
         logger.info(f"Getting metrics from Spark Application  checkpoint: {has_checkpoint}")
         # get the experiment metrics
         em = ExperimentMetrics(has_checkpoint=has_checkpoint, hist_server_url=hist_server_url, local=self.local)
 
         log = get_log(self.log_path)
         app_id = em.get_app_id(log=log)
-        app_data = em.get_app_data(app_id=app_id)
+        app_data = em.get_app_data(app_id=app_id, cache_df_file_path=cache_df_file_path)
         tcs = em.get_tcs(log=log)
 
         rdds = em.get_checkpoint_rdds(log=log)
@@ -146,15 +148,15 @@ class ExperimentsRunner:
 
         return app_id, app_data_tc
 
-    def run_remote(self, has_checkpoint: bool, app_name: str) -> str:
+    def run_remote(self, has_checkpoint: bool, app_name: str, cache_df_file_path: str = None) -> str:
         logger.info("""
             ########################################
             #   STARTING A NEW REMOTE EXPERIMENT   #
             ########################################
             """)
-
-        app_id, metrics = self.get_metrics(hist_server_url=self.history_server_url, has_checkpoint=has_checkpoint)
-        file_path = write_results(app_data=metrics, key=app_name, app_id=app_id, has_checkpoint=has_checkpoint)
+        app_id, metrics = self.get_metrics(hist_server_url=self.history_server_url, has_checkpoint=has_checkpoint,
+                                           cache_df_file_path=cache_df_file_path)
+        file_path = self.write_results(app_data=metrics, key=app_name, app_id=app_id, has_checkpoint=has_checkpoint)
 
         logger.info(f"Result: {metrics.head(3)}")
 

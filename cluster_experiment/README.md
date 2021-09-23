@@ -63,7 +63,7 @@ python src/hdfs_service.py mkdir http://domain:port user / checkpoints/felix-sch
 
 ## 6. safe the application driver log to local fs (to get the checkpoint data)
 ````bash
-kubectl logs pod/gbtsmall-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/gbt_small-app-driver-checkpoint.log
+kubectl logs pod/gbtsmall-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/gbt_small-checkpoint-driver.log
 kubectl logs pod/gbt-9000000-10-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/logs/gbt-9000000-10-driver.log
 kubectl logs pod/gbt-9000000-10-checkpoint-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/gbt-9000000-10-checkpoint-driver.log
 ````

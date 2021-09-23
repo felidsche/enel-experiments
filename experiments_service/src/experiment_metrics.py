@@ -3,6 +3,7 @@ import re
 import pandas as pd
 import requests
 import logging
+from os.path import exists
 
 logger = logging.getLogger(__name__ + "ExperimentMetrics")  # holds the name of the module
 
@@ -12,7 +13,7 @@ class ExperimentMetrics:
     def __init__(
             self, has_checkpoint: bool = False,
             hist_server_url: str = "http://localhost:18080/api/v1/",
-            local: bool = False
+            local: bool = True
     ):
         self.has_checkpoint = has_checkpoint
         self.hist_server_url = hist_server_url
@@ -26,16 +27,28 @@ class ExperimentMetrics:
             logger.warning(f"{e}  No values were returned, check the app_id")
         return data
 
-    def get_app_data(self, app_id) -> pd.DataFrame:
+    def get_app_data(self, app_id, cache_df_file_path: str = None) -> pd.DataFrame:
         """
         App >> (Job) >> Stage >> Task
         For an app, get the stages and tasks of each job
         Note: The job data is skipped to get the stages and tasks
+        :param cache_df_file_path:
         :param app_id:
         :return: pd.DataFrame with stageId as index
         """
-        stages_attempt_data = self.get_stages_attempt_data(app_id=app_id)
-        stages_attempt_df = pd.DataFrame(stages_attempt_data).stack().apply(pd.Series).reset_index()
+        if cache_df_file_path is not None and not exists(cache_df_file_path):
+            logger.info(f"Requesting the stage attempt data for app_id: {app_id} from: {self.hist_server_url}")
+            stages_attempt_data = self.get_stages_attempt_data(app_id=app_id)
+            stages_attempt_df = pd.DataFrame(stages_attempt_data).stack().apply(pd.Series).reset_index()
+            logger.info(f"Caching stage attempt data to: {cache_df_file_path}")
+            stages_attempt_df.to_pickle(cache_df_file_path)
+        elif cache_df_file_path is not None and exists(cache_df_file_path):
+            logger.info(f"The stage attempt data is loaded from: {cache_df_file_path}")
+            stages_attempt_df = pd.read_pickle(cache_df_file_path)
+        else:
+            logger.info(f"Requesting the stage attempt data for app_id: {app_id} from: {self.hist_server_url}")
+            stages_attempt_data = self.get_stages_attempt_data(app_id=app_id)
+            stages_attempt_df = pd.DataFrame(stages_attempt_data).stack().apply(pd.Series).reset_index()
         try:
             stages_attempt_df = stages_attempt_df[
                 ["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks",
@@ -43,10 +56,17 @@ class ExperimentMetrics:
                  "tasks"]]
             # get the data on task granularity
             logger.info(f"Getting the data for app_id: {app_id} on task granularity...")
-            # TODO: refactor this to work with large data
-            tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)).apply(pd.Series).unstack(
-                level=-1).apply(
-                pd.Series).dropna(axis=0, how="all").reset_index(0)
+            """
+                1. pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series): create one column for each task in ["tasks"]
+                2. unstack(): create one column per stage attempt (Type: dict) with one row for each task
+                3. apply(pd.Series): unpack the dict column in multiple columns
+                4. reset_index(0): remove the MultiIndex stage_attempt/task_id and go back to the default index
+            """
+            tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series))\
+                .unstack()\
+                .apply(pd.Series)\
+                .reset_index(0)
+            # select only relevant columns
             tasks_df = tasks_df[["attempt", "duration", "executorId", "index", "launchTime", "taskId"]]
             df = stages_attempt_df.join(tasks_df).drop(labels="tasks", axis=1)
             df.rename(columns={"attempt": "taskAttempt", "duration": "taskDuration", "executorId": "taskExecutorId",
@@ -55,7 +75,6 @@ class ExperimentMetrics:
         except KeyError as e:
             logger.warning(f"{e}, No completed applications found for app_id: {app_id}!")
             return stages_attempt_df
-        # df.to_csv(path_or_buf="/Users/fschnei4/TUB_Master_ISM/SoSe21/MA/artifacts/stage_and_task_data.csv",na_rep="nan")
 
     def get_stages_attempt_data(self, app_id: str) -> list:
         stages_endpoint = f"applications/{app_id}/stages/"
@@ -145,10 +164,16 @@ class ExperimentMetrics:
         checkpoint_rdds = rdd_tcs.keys()
         # add a column for rows with the ID where the checkpointed RDDs is in the column "rddIds" of app_data
         app_data['rddId'] = app_data.rddIds.apply(
-            lambda rddIds: self.task_has_checkpoint(rddIds=rddIds, checkpoint_rdds=checkpoint_rdds))
+            lambda rddIds: self.task_has_checkpoint(rddIds=rddIds, checkpoint_rdds=checkpoint_rdds)
+        )
         # add the tcms by joining
-        app_data_tc = pd.merge(app_data, rdd_tcs_df, on="rddId", how="left")
-        return app_data_tc
+        try:
+            app_data_tc = pd.merge(app_data, rdd_tcs_df, on="rddId", how="left")
+            return app_data_tc
+        except ValueError as e:
+            logger.error(f"Error: {e}, No tcms cound be added, returning it without it")
+            return app_data
+
 
     def get_app_id(self, log: str) -> str:
         """

@@ -3,6 +3,12 @@ from unittest import TestCase
 
 from get_workloads import get_workloads
 from run_experiments import ExperimentsRunner
+import logging
+
+logging.basicConfig(level=logging.INFO, filename=f"log/TestExperimentRunner.log",
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+logger = logging.getLogger(__name__ + "TestExperimentRunner")  # holds the name of the module
 
 
 class TestExperimentsRunner(TestCase):
@@ -44,10 +50,11 @@ class TestExperimentsRunner(TestCase):
     def test_run_remote(self):
         local = bool(0)
         app_name = "GradientBoostedTrees"
-        log_path = "cluster_experiment/logs/gbt/20210922/gbt-9000000-10-checkpoint-driver.log"
+        log_path = "../../cluster_experiment/logs/gbt/20210922/gbt_small-checkpoint-driver.log"
         has_checkpoint = bool(1)
-
+        cache_df_file_path = "../cache/stages_attempt_df.pkl"
         # requires vpn connection and port forwarding of spark history server
         runner = ExperimentsRunner(local=local, history_server_url="http://localhost:18081/api/v1/", log_path=log_path)
-        file_path = runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name)
-        self.assertTrue(exists(file_path))
+        file_path = runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name,
+                                      cache_df_file_path=cache_df_file_path)
+        self.assertIsInstance(file_path, str, "file_path is not a string, sth went wrong")

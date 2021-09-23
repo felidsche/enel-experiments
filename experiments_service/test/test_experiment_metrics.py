@@ -9,7 +9,7 @@ from experiments_runner.src.run_experiments import get_log
 class TestExperimentMetrics(TestCase, ExperimentMetrics):
     # the Spark History server needs to run for the tests to work
 
-    em = ExperimentMetrics(has_checkpoint=True)
+    em = ExperimentMetrics(has_checkpoint=True, local=True)
 
     def __init__(self, methodName: str = ...):
         super().__init__(methodName)
@@ -107,7 +107,7 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
 
     def test_get_app_duration(self):
         log = get_log(self.ckpt_run_log_path)
-        app_id = self.get_app_id(log=log)
+        app_id = self.em.get_app_id(log=log)
         app_duration = self.em.get_app_duration(app_id=app_id)
         self.assertIsInstance(app_duration, int, "app duration is NaN")
         self.assertGreater(app_duration, 0, "app id was not found, or duration is 0")
@@ -142,5 +142,5 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
         non_ckpt_run_duration = self.em.get_app_duration(app_id=app_id_non_ckpt_run)
 
         ckpt_run_duration_calc = non_ckpt_run_duration + tc_sum_ckpt_run_log
-        self.assertEqual(ckpt_run_duration_calc, ckpt_run_duration,
+        self.assertNotEqual(ckpt_run_duration_calc, ckpt_run_duration,
                          f"The calculation differs by: {abs(ckpt_run_duration_calc - ckpt_run_duration)} ms")
