@@ -5,6 +5,13 @@ import pandas as pd
 from experiment_metrics import ExperimentMetrics
 from experiments_runner.src.run_experiments import get_log
 
+import logging
+
+logging.basicConfig(level=logging.INFO, filename=f"log/TestExperimentService.log",
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+logger = logging.getLogger(__name__ + "TestExperimentService")  # holds the name of the module
+
 
 class TestExperimentMetrics(TestCase, ExperimentMetrics):
     # the Spark History server needs to run for the tests to work
@@ -19,8 +26,8 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
     def test_get_tc(self):
         if self.em.get_has_checkpoint():
             tcs = self.em.get_tcs(log=get_log(path=self.ckpt_run_log_path))
-            print(f"TCs: {tcs}")
-            print(f"TC sum: {sum(tcs)} ms")
+            logger.info(f"TCs: {tcs}")
+            logger.info(f"TC sum: {sum(tcs)} ms")
             self.assertIsInstance(tcs, list, "Tcs is not a list")
             self.assertGreater(len(tcs), 0, "No tcs found")
 
@@ -82,7 +89,7 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
     def test_calc_mttr(self):
         self.skipTest("# TODO: implement this once the failure injector is there")
         mttr = self.calc_mttr()
-        print(f"MTTR: {mttr}")
+        logger.info(f"MTTR: {mttr}")
         self.assertIsInstance(mttr, int, "MTTR is int")
         self.assertGreater(mttr, 0, "MTTR <= 0")
 

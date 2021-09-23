@@ -49,11 +49,13 @@ class ExperimentMetrics:
             logger.info(f"Requesting the stage attempt data for app_id: {app_id} from: {self.hist_server_url}")
             stages_attempt_data = self.get_stages_attempt_data(app_id=app_id)
             stages_attempt_df = pd.DataFrame(stages_attempt_data).stack().apply(pd.Series).reset_index()
+
         try:
             stages_attempt_df = stages_attempt_df[
                 ["status", "stageId", "attemptId", "numTasks", "numActiveTasks", "numCompleteTasks", "numFailedTasks",
                  "numKilledTasks", "submissionTime", "firstTaskLaunchedTime", "completionTime", "name", "rddIds",
                  "tasks"]]
+
             # get the data on task granularity
             logger.info(f"Getting the data for app_id: {app_id} on task granularity...")
             """

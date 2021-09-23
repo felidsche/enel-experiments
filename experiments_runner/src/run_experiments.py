@@ -10,6 +10,7 @@ from os.path import exists
 import pandas as pd
 
 from experiments_service.src.experiment_metrics import ExperimentMetrics
+from get_workloads import get_workloads
 
 logger = logging.getLogger(__name__ + "ExperimentRunner")  # holds the name of the module
 
@@ -47,8 +48,6 @@ class ExperimentsRunner:
         self.history_server_url = history_server_url
         self.log_path = log_path
 
-    checkpoints = [0, 1]
-
     def get_spark_submit(self, workload: str, args: str) -> list:
         logger.info("Get spark_submit..")
         master = "local"
@@ -74,20 +73,19 @@ class ExperimentsRunner:
             mode = "local"
         else:
             mode = "cluster"
-        file_dir = f"output/{mode}/{key}/"
+        file_dir = f"output/{mode}/{key}"
         file_name = f"{app_id}_{checkpoint_path}.csv"
         file_path = f"{file_dir}/{file_name}"
         logger.info(f"Writing results of {app_id} to {file_path}...")
         file_exists = exists(file_path)
-        dir_exists = exists(file_path)
-        if not file_exists and dir_exists:
+        if not file_exists:
             app_data.to_csv(
                 path_or_buf=file_path,
                 na_rep="nan"
             )
         else:
             logger.warning(
-                f"No output is written because either the file: {file_name} exists already in: {file_dir} OR {file_dir} does not exist")
+                f"No output is written because the file: {file_path} exists already in.")
         return file_path
 
     def run_local(self, workloads: dict) -> str:
@@ -100,23 +98,22 @@ class ExperimentsRunner:
         if exists(self.log_path):
             logger.warning("There is still is an app.log file from a previous run, deleting it...")
             os.remove(self.log_path)
-        for checkpoint in self.checkpoints:
-            for key, value in workloads.items():
-                spark_submit = self.get_spark_submit(workload=key, args=value)
-                logger.info(f"Runing workload: {key}  with args: {value}  locally: {self.local}")
-                # execute the spark_submit command
-                execute_command(commands=spark_submit, local=self.local)
+        for key, value in workloads.items():
+            spark_submit = self.get_spark_submit(workload=key, args=value)
+            logger.info(f"Runing workload: {key}  with args: {value}  locally: {self.local}")
+            # execute the spark_submit command
+            execute_command(commands=spark_submit, local=self.local)
 
-                has_checkpoint = bool(checkpoint)
-                app_id, metrics = self.get_metrics(has_checkpoint=has_checkpoint,
-                                                   hist_server_url=self.history_server_url)
-                file_path = self.write_results(app_data=metrics, key=key, app_id=app_id, has_checkpoint=has_checkpoint)
+            has_checkpoint = bool(checkpoint)
+            app_id, metrics = self.get_metrics(has_checkpoint=has_checkpoint,
+                                               hist_server_url=self.history_server_url)
+            file_path = self.write_results(app_data=metrics, key=key, app_id=app_id, has_checkpoint=has_checkpoint)
 
-                logger.info(f"Result: {metrics.head(3)}")
+            logger.info(f"Result: {metrics.head(3)}")
 
-                # remove app.log to read the next one
-                logger.info(f"Removing: {self.log_path}")
-                os.remove(self.log_path)
+            # remove app.log to read the next one
+            logger.info(f"Removing: {self.log_path}")
+            os.remove(self.log_path)
         logger.info("""
             ########################################
             #           LOCAL EXPERIMENT DONE      #
@@ -138,12 +135,16 @@ class ExperimentsRunner:
         rdds = em.get_checkpoint_rdds(log=log)
         duration = em.get_app_duration(app_id=app_id)
         logger.info(f"For App_ID: {app_id} The total duration was {duration} ms")
-        if has_checkpoint:
-            logger.info(f"For App_ID: {app_id} The rdds: {rdds} were checkpointed and it took {sum(tcs)} ms")
+
+
         rdd_tcs = em.merge_tc_rdds(
             tcs=tcs,
             rdds=rdds
         )
+        if has_checkpoint:
+            for tup in rdd_tcs.items():
+                logger.info(f"App_id: {app_id}; Checkpointing the rdd with ID: {tup.key()} took: {tup.value()} ms")
+            logger.info(f"In sum, checkpointing App_id: {app_id} took: {sum(tcs)} ms.")
         app_data_tc = em.add_tc_to_app_data(rdd_tcs=rdd_tcs, app_data=app_data)
 
         return app_id, app_data_tc
@@ -171,19 +172,41 @@ class ExperimentsRunner:
 if __name__ == '__main__':
     import logging.config
 
-    logging.basicConfig(level=logging.INFO, filename=f"../../log/ExperimentRunner.log",
+    logging.basicConfig(level=logging.INFO, filename=f"log/ExperimentRunner.log",
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     local = bool(int(sys.argv[1]))
 
     if local:
         runner = ExperimentsRunner(local=local)
-        runner.run_local()
+        checkpoint = 0
+        iterations = 1
+        k = 3
+        sampling_fraction = 0.001
+        checkpoint_interval = 5
+        analytics_data_paths = ["samples/OS_ORDER_ITEM.txt", "samples/OS_ORDER.txt"]
+        lda_data_paths = ["samples/LDA_wiki_noSW_90_Sampling_1", "samples/stopwords.txt"]
+        gbt_data_path = "samples/small.txt"
+        pagerank_data_path = "samples/google_g_16.txt"
+
+        workloads = get_workloads(
+            checkpoint=checkpoint,
+            iterations=iterations,
+            k=k,
+            sampling_fraction=sampling_fraction,
+            checkpoint_interval=checkpoint_interval,
+            analytics_data_paths=analytics_data_paths,
+            lda_data_paths=lda_data_paths,
+            gbt_data_path=gbt_data_path,
+            pagerank_data_path=pagerank_data_path,
+            analytics_only=True
+        )
+        runner.run_local(workloads=workloads)
     else:
         app_name = sys.argv[2]
         log_path = sys.argv[3]
         has_checkpoint = bool(sys.argv[4])
-
+        cache_df_file_path = "experiments_runner/tests/cache/stages_attempt_df.pkl"
         # requires vpn connection and port forwarding of spark history server
         runner = ExperimentsRunner(local=local, history_server_url="http://localhost:18081/api/v1/", log_path=log_path)
-        runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name)
+        runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name, cache_df_file_path=cache_df_file_path)
