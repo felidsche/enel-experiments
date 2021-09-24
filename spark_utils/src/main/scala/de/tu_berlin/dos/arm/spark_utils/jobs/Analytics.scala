@@ -29,14 +29,15 @@ object Analytics {
 
     val sparkConf = new SparkConf()
       .setAppName(appSignature)
-      .setMaster(master)
+      //.setMaster(master)
 
     val sparkContext = new SparkContext(sparkConf)
-    sparkContext.setCheckpointDir("checkpoints/" + appSignature + "/" + checkpointTime + "/")
+    //sparkContext.setCheckpointDir("checkpoints/" + appSignature + "/" + checkpointTime + "/")
+    sparkContext.setCheckpointDir("hdfs://ip:port/checkpoints/felix-schneider-thesis") //TODO: change this
 
     val spark = SparkSession
       .builder()
-      .master(master)
+      //.master(master)
       .appName(appSignature)
       .getOrCreate()
 
@@ -78,7 +79,7 @@ object Analytics {
     // random analytics workload
     var df = orders.join(orderItems, usingColumn = "ORDER_ID")
 
-    if (conf.checkpointRdd().equals(1)) {
+    if (conf.checkpoint().equals(1)) {
       println("Checkpointing the DataFrame...")
       df.checkpoint()
     }
@@ -107,11 +108,11 @@ class AnalyticsArgs(a: Seq[String]) extends ScallopConf(a) {
   val ordersInput: ScallopOption[String] = trailArg[String](required = true, name = "<ordersInput>",
     descr = "Order input file").map(_.toLowerCase)
 
-  val samplingFraction: ScallopOption[Double] = opt[Double](noshort = true, default = Option(0.001),
-    descr = "Whether to checkpoint the RDD before aggregation or not")
+  val samplingFraction: ScallopOption[Double] = opt[Double](noshort = true, default = Option(1.0),
+    descr = "The fraction of the dataset to sample")
 
   // interpreted as boolean
-  val checkpointRdd: ScallopOption[Int] = opt[Int](noshort = true, default = Option(0),
+  val checkpoint: ScallopOption[Int] = opt[Int](noshort = true, default = Option(0),
     descr = "Whether to checkpoint the RDD before aggregation or not")
 
   override def onError(e: Throwable): Unit = e match {

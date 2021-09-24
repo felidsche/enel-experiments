@@ -24,12 +24,14 @@ python src/hdfs_service.py file_upload http://domain:port user / jar-files/spark
 
 ## 3. executing a job on the cluster
 ```bash
-kubectl apply -f conf/gbt_small.yaml  # spark-3c566556aa494a7e9f462949432186c2
+kubectl apply -f conf/gbt/gbt_small.yaml  # spark-3c566556aa494a7e9f462949432186c2
 # sparkapplication.sparkoperator.k8s.io/gbtsmall created
-kubectl apply -f conf/gbt_9000000_10.yaml # spark-d442e8781ae944f181fd4c5e555e4ccc
+kubectl apply -f conf/gbt/gbt_9000000_10.yaml # spark-d442e8781ae944f181fd4c5e555e4ccc
 # sparkapplication.sparkoperator.k8s.io/gbt-9000000-10 created
-kubectl apply -f conf/gbt_9000000_10_ckpt.yaml
+kubectl apply -f conf/gbt/gbt_9000000_10_ckpt.yaml
 # sparkapplication.sparkoperator.k8s.io/gbt-9000000-10-checkpoint created
+kubectl apply -f conf/gbt/gbt_100000000_19.yaml.yaml
+# sparkapplication.sparkoperator.k8s.io/gbt_100000000_19.yaml created
 ```
 
 ## 4. look at the job on the history server and prometheus
@@ -66,6 +68,7 @@ python src/hdfs_service.py mkdir http://domain:port user / checkpoints/felix-sch
 kubectl logs pod/gbtsmall-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/gbt_small-checkpoint-driver.log
 kubectl logs pod/gbt-9000000-10-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/logs/gbt-9000000-10-driver.log
 kubectl logs pod/gbt-9000000-10-checkpoint-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210922/gbt-9000000-10-checkpoint-driver.log
+kubectl logs pod/gbt-100000000-19-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/gbt/20210924/gbt-100000000-19-driver.log
 ````
 
 ## 7. look at checkpoints 
@@ -78,10 +81,25 @@ kubectl logs pod/gbt-9000000-10-checkpoint-driver > /Users/fschnei4/TUB_Master_I
 ## 8. delete `sparkapplication` from the cluster
 - show all `sparkapplications`: `kubectl get sparkapplications`
 - delete a certain `sparkapplication`: `kubectl delete sparkapplication <SparkApplication name>`
+- 24.09.21 GBT:
+- `kubectl delete sparkapplication gbtsmall`
+-> `sparkapplication.sparkoperator.k8s.io "gbtsmall" deleted`
+
+- `kubectl delete sparkapplication gbt-9000000-10`
+- `kubectl delete sparkapplication gbt-9000000-10-checkpoint`
+- `kubectl delete sparkapplication gbt-100000000-19`
 
 ## 9. check a (running) `sparkapplication` on the cluster
 - `kubectl describe sparkapplication <SparkApplication name>`
 
-## 10. schedule `Analytics` workload every 10m and track only the last 20 successful runs
+## 10. fail a spark job
+see `gbt-100000000-19-driver.log`, `gbt-100000000-19` was too big 
+
+## 11. run `Analytics` workload on the cluster with and without checkpoint
+- 24.09.2021
+`kubectl apply -f conf/analytics/analytics_1gb.yaml`
+- `kubectl apply -f conf/analytics/analytics_1gb_ckpt.yaml`
+
+## 12. schedule `Analytics` workload every 10m and track only the last 20 successful runs
 - update the application after 20 runs
 - see `conf/analytics`
