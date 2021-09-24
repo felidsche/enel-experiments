@@ -29,7 +29,7 @@ class TestExperimentsRunner(TestCase):
         checkpoint_interval = 5
         analytics_data_paths = ["../../samples/OS_ORDER_ITEM.txt", "../../samples/OS_ORDER.txt"]
         lda_data_paths = ["../../samples/LDA_wiki_noSW_90_Sampling_1", "../../samples/stopwords.txt"]
-        gbt_data_path = "../../samples/small.txt"
+        gbt_data_path = "../../samples/gbt_small.txt"
         pagerank_data_path = "../../samples/google_g_16.txt"
 
         workloads = get_workloads(

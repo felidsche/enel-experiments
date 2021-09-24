@@ -29,7 +29,7 @@ spec:
     "spark.kubernetes.driver.annotation.prometheus.io/port": "4040"
   mainClass: de.tu_berlin.dos.arm.spark_utils.jobs.GradientBoostedTrees
   mainApplicationFile: hdfs:///jar-files/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-dependencies.jar
-  arguments: [ "--iterations", "20", "--checkpoint", "1", "--checkpoint-interval", "5", "hdfs:///spark/sgd/small.txt"]
+  arguments: [ "--iterations", "20", "--checkpoint", "1", "--checkpoint-interval", "5", "hdfs:///spark/sgd/gbt_small.txt"]
   sparkVersion: "3.0.0"
   restartPolicy:
     type: Never

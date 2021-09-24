@@ -78,3 +78,10 @@ kubectl logs pod/gbt-9000000-10-checkpoint-driver > /Users/fschnei4/TUB_Master_I
 ## 8. delete `sparkapplication` from the cluster
 - show all `sparkapplications`: `kubectl get sparkapplications`
 - delete a certain `sparkapplication`: `kubectl delete sparkapplication <SparkApplication name>`
+
+## 9. check a (running) `sparkapplication` on the cluster
+- `kubectl describe sparkapplication <SparkApplication name>`
+
+## 10. schedule `Analytics` workload every 10m and track only the last 20 successful runs
+- update the application after 20 runs
+- see `conf/analytics`

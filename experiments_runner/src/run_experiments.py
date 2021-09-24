@@ -186,7 +186,7 @@ if __name__ == '__main__':
         checkpoint_interval = 5
         analytics_data_paths = ["samples/OS_ORDER_ITEM.txt", "samples/OS_ORDER.txt"]
         lda_data_paths = ["samples/LDA_wiki_noSW_90_Sampling_1", "samples/stopwords.txt"]
-        gbt_data_path = "samples/small.txt"
+        gbt_data_path = "samples/gbt_small.txt"
         pagerank_data_path = "samples/google_g_16.txt"
 
         workloads = get_workloads(
@@ -203,10 +203,10 @@ if __name__ == '__main__':
         )
         runner.run_local(workloads=workloads)
     else:
+        # remote execution
         app_name = sys.argv[2]
         log_path = sys.argv[3]
-        has_checkpoint = bool(sys.argv[4])
-        cache_df_file_path = "experiments_runner/tests/cache/stages_attempt_df.pkl"
+        has_checkpoint = bool(int(sys.argv[4]))
         # requires vpn connection and port forwarding of spark history server
         runner = ExperimentsRunner(local=local, history_server_url="http://localhost:18081/api/v1/", log_path=log_path)
-        runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name, cache_df_file_path=cache_df_file_path)
+        runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name)
