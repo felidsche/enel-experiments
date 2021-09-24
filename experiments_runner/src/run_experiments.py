@@ -142,12 +142,18 @@ class ExperimentsRunner:
             rdds=rdds
         )
         if has_checkpoint:
-            for tup in rdd_tcs.items():
-                logger.info(f"App_id: {app_id}; Checkpointing the rdd with ID: {tup.key()} took: {tup.value()} ms")
+            for key, value in rdd_tcs.items():
+                logger.info(f"App_id: {app_id}; Checkpointing the rdd with ID: {key} took: {value} ms")
             logger.info(f"In sum, checkpointing App_id: {app_id} took: {sum(tcs)} ms.")
-        app_data_tc = em.add_tc_to_app_data(rdd_tcs=rdd_tcs, app_data=app_data)
+        try:
+            app_data_tc = em.add_tc_to_app_data(rdd_tcs=rdd_tcs, app_data=app_data)
+            return app_id, app_data_tc
+        except AttributeError as e:
+            logging.error(f"{e}, try connecting to the VPN.")
+            print(f"{e}, try connecting to the VPN.")
+            sys.exit()
 
-        return app_id, app_data_tc
+
 
     def run_remote(self, has_checkpoint: bool, app_name: str, cache_df_file_path: str = None) -> str:
         logger.info("""

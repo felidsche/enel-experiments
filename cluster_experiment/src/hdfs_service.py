@@ -12,10 +12,13 @@ def main(op: str):
     url = sys.argv[2]
     user = sys.argv[3]
     root = sys.argv[4]
+
     client = InsecureClient(url=url, user=user, root=root)
+
     hdfs_service = HdfsService(client=client)
-    hdfs_path = sys.argv[5]
+
     if op == "file_upload":
+        hdfs_path = sys.argv[5]
         file_path = sys.argv[6]
         try:
             overwrite = bool(sys.argv[7])
@@ -25,7 +28,13 @@ def main(op: str):
         hdfs_service.upload_file_to_hdfs(local_path=file_path, hdfs_path=hdfs_path, overwrite=overwrite)
 
     if op == "mkdir":
+        hdfs_path = sys.argv[5]
         hdfs_service.create_dir_on_hdfs(hdfs_path=hdfs_path)
+
+    if op == "rename":
+        hdfs_src_path = sys.argv[5]
+        hdfs_dst_path = sys.argv[6]
+        hdfs_service.rename_file(hdfs_src_path, hdfs_dst_path)
 
 
 class HdfsService():
@@ -50,11 +59,16 @@ class HdfsService():
         self.client.makedirs(hdfs_path=hdfs_path)
         logging.info(f"Finished creating a directory at: {hdfs_path}")
 
+    def rename_file(self, hdfs_src_path: str, hdfs_dst_path: str):
+        logging.info(f"renaming: {hdfs_src_path} to: {hdfs_dst_path}")
+        self.client.rename(hdfs_src_path=hdfs_src_path, hdfs_dst_path=hdfs_dst_path)
+        logging.info(f"Finished renaming: {hdfs_src_path} to: {hdfs_dst_path}")
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 5:
         print("minimum 5 args are required")
-        print("Usage: <operation: file_upload/mkdir> <hdfs url> <hdfs user> <hdfs root dir> <hdfs file path>"
+        print("Usage: <operation: file_upload/mkdir/rename> <hdfs url> <hdfs user> <hdfs root dir> <hdfs file path>"
               "<local file path> <overwrite: True/False> (all string)")
     operation = sys.argv[1]
     main(op=operation)

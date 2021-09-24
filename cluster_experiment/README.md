@@ -97,8 +97,19 @@ see `gbt-100000000-19-driver.log`, `gbt-100000000-19` was too big
 
 ## 11. run `Analytics` workload on the cluster with and without checkpoint
 - 24.09.2021
-`kubectl apply -f conf/analytics/analytics_1gb.yaml`
-- `kubectl apply -f conf/analytics/analytics_1gb_ckpt.yaml`
+- HdFsS fiLeNaMe is case sEnSiTiVe
+```bash
+# run analytics workload once with and without checkpoint
+kubectl apply -f conf/analytics/analytics_1gb.yaml
+kubectl apply -f conf/analytics/analytics_1gb_ckpt.yaml
+# copy the driver logs from k8s to local
+kubectl logs pod/analytics-1gb-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/analytics/20210924/analytics-1gb-driver.log
+kubectl logs pod/analytics-1gb-checkpoint-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/analytics/20210924/analytics-1gb-checkpoint-driver.log
+# generate the csv output
+cd ..
+python experiments_runner/src/run_experiments.py 0 Analytics cluster_experiment/logs/analytics/20210924/analytics-1gb-driver.log 0
+python experiments_runner/src/run_experiments.py 0 Analytics cluster_experiment/logs/analytics/20210924/analytics-1gb-checkpoint-driver.log 1
+```
 
 ## 12. schedule `Analytics` workload every 10m and track only the last 20 successful runs
 - update the application after 20 runs

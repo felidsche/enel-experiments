@@ -29,7 +29,7 @@ spec:
     "spark.kubernetes.driver.annotation.prometheus.io/port": "4040"
   mainClass: de.tu_berlin.dos.arm.spark_utils.jobs.Analytics
   mainApplicationFile: hdfs:///jar-files/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-dependencies.jar
-  arguments: [ "--checkpoint" "0", "hdfs:///spark/analytics/OS_ORDER_ITEM_1GB.txt", "hdfs:///spark/analytics/OS_ORDER_1GB.txt"]
+  arguments: [ "--checkpoint", "0", "hdfs:///spark/analytics/os_order_item_1gb.txt", "hdfs:///spark/analytics/os_order_1gb.txt"]
   sparkVersion: "3.0.0"
   restartPolicy:
     type: Never
