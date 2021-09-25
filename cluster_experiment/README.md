@@ -84,10 +84,12 @@ kubectl logs pod/gbt-100000000-19-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21
 - 24.09.21 GBT:
 - `kubectl delete sparkapplication gbtsmall`
 -> `sparkapplication.sparkoperator.k8s.io "gbtsmall" deleted`
+```bash
+kubectl delete sparkapplication gbt-9000000-10
+kubectl delete sparkapplication gbt-9000000-10-checkpoint
+kubectl delete sparkapplication gbt-100000000-19
 
-- `kubectl delete sparkapplication gbt-9000000-10`
-- `kubectl delete sparkapplication gbt-9000000-10-checkpoint`
-- `kubectl delete sparkapplication gbt-100000000-19`
+```
 
 ## 9. check a (running) `sparkapplication` on the cluster
 - `kubectl describe sparkapplication <SparkApplication name>`
