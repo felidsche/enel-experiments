@@ -16,9 +16,9 @@ object eComHDFSWriter {
 
     println("Start writing eCom data (for Analytics) on Hadoop...")
 
-    val filePath = args(2)
-    val outputPath = args(3)
-    val defaultFs = args(4)
+    val filePath = args(0)
+    val outputPath = args(1)
+    val defaultFs = args(2)
 
 
     System.setProperty("HADOOP_USER_NAME", "drms")
