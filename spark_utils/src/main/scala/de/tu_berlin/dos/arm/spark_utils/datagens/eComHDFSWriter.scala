@@ -3,9 +3,7 @@ package de.tu_berlin.dos.arm.spark_utils.datagens
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 
-import java.util.concurrent.ThreadLocalRandom
 import scala.io.Source
-import scala.math.pow
 
 object eComHDFSWriter {
   def main(args: Array[String]): Unit = {
@@ -33,7 +31,7 @@ object eComHDFSWriter {
     val bufferedSource = Source.fromFile(filePath)
     for (line <- bufferedSource.getLines) {
       // seperate each line by linebreak
-      os.writeBytes(line.mkString)
+      os.writeBytes(line.mkString + "\n")
     }
 
     bufferedSource.close
