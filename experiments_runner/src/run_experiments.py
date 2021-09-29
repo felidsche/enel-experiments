@@ -149,8 +149,8 @@ class ExperimentsRunner:
             app_data_tc = em.add_tc_to_app_data(rdd_tcs=rdd_tcs, app_data=app_data)
             return app_id, app_data_tc
         except AttributeError as e:
-            logging.error(f"{e}, try connecting to the VPN.")
-            print(f"{e}, try connecting to the VPN.")
+            logging.error(f"{e}, vpn connected and ports from history server forwarded?")
+            print(f"{e}, vpn connected and ports from history server forwarded?")
             sys.exit()
 
 

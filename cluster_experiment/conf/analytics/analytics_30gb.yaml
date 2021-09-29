@@ -1,7 +1,7 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: analytics-1gb
+  name: analytics-30gb-2
 spec:
   type: Scala
   mode: cluster
@@ -29,7 +29,7 @@ spec:
     "spark.kubernetes.driver.annotation.prometheus.io/port": "4040"
   mainClass: de.tu_berlin.dos.arm.spark_utils.jobs.Analytics
   mainApplicationFile: hdfs:///jar-files/spark-checkpoint-workloads-1.0-SNAPSHOT-jar-with-dependencies.jar
-  arguments: [ "--checkpoint", "0", "hdfs:///spark/analytics/os_order_item_1gb.txt", "hdfs:///spark/analytics/os_order_1gb.txt"]
+  arguments: [ "--checkpoint", "0", "hdfs:///spark/analytics/os_order_item_30gb.txt", "hdfs:///spark/analytics/os_order_30gb.txt"]
   sparkVersion: "3.0.0"
   restartPolicy:
     type: Never
@@ -40,9 +40,9 @@ spec:
       version: 3.0.0
     serviceAccount: "spark-operator"
   executor:
-    instances: 4
+    instances: 10
     cores: 4
-    memory: 2048m
+    memory: 8048m
     # keep executors pods after spark app is terminated
     deleteOnTermination: True
     labels:

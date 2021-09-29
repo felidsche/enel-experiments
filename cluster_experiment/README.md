@@ -93,6 +93,7 @@ kubectl delete sparkapplication gbt-100000000-19
 
 ## 9. check a (running) `sparkapplication` on the cluster
 - `kubectl describe sparkapplication <SparkApplication name>`
+- ``kubectl logs pod/<SparkApplication name>-driver``
 
 ## 10. fail a spark job
 see `gbt-100000000-19-driver.log`, `gbt-100000000-19` was too big 

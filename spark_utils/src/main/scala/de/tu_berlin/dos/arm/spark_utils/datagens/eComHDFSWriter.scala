@@ -23,8 +23,8 @@ object eComHDFSWriter {
     val path = new Path(outputPath)
     val conf = new Configuration()
     conf.set("fs.defaultFS", defaultFs)
-    conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName);
-    conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName);
+    //conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName);
+    //conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName);
     val fs = FileSystem.get(conf)
     val os = fs.create(path)
     // get the content of the file

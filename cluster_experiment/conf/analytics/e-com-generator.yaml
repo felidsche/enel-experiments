@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: e-com-generator
+  labels:
+    app: e-com-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e-com-generator
+  template:
+    metadata:
+      labels:
+        app: e-com-generator
+    spec:
+      containers:
+        - name: e-com-generator
+          image: felidsche/e-com-generator:1.3
+          command: [ "sleep" ]
+          args: [ "infinity" ]
+          #workingDir: /usr/local/src
+          #command: [ "./gen_table.sh" ]
+          #args: [ "2", "output/OS_ORDER.txt", "spark/analytics/os_order_2gb.txt", "hdfs://ip:port" ]
+          ports:
+            - containerPort: 80

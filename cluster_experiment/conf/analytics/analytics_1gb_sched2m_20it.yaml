@@ -15,7 +15,7 @@ spec:
       imagePullPolicy: Always
       sparkConf:
         # hadoop
-        "spark.hadoop.fs.defaultFS": hdfs://130.149.249.46:9000
+        "spark.hadoop.fs.defaultFS": hdfs://ip:port
         # event log
         "spark.eventLog.enabled": "true"
         "spark.eventLog.dir": hdfs:///spark/job-event-log/
