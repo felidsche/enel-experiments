@@ -1,6 +1,6 @@
 # Experiment to measure the time for checkpointing an RDD in two Spark Workloads: GBT and analytics (see spark_utils/jobs)
 # Facts:
-  # Iterations: 10, Checkpoint interval: 3 -> produces 3 checkpoints
+  # Iterations: 5, Checkpoint interval: 3 -> produces 3 checkpoints
 # Datasets:
   # GBT: hdfs:///spark/sgd/100000000_19.txt (35GB) -> already on HDFS!, Analytics: hdfs:///spark/analytics/OS_ORDER_ITEM_30GB.txt, hdfs:///spark/analytics/OS_ORDER_30GB.txt,
 # DRMS k8s Cluster:
@@ -34,14 +34,12 @@
   # checkpoint size = ~40GB (200 files at 200MB each)
   # get driver logs
   kubectl logs pod/analytics-30gb-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/analytics/20210925/analytics-30gb-10ex-8gbexmem-4exc-driver.log
-  kubectl logs pod/analytics-30gb-checkpoint-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/analytics/20210925/analytics-30gb-10ex-8gbexmem-4exc-checkpoint-driver.log
+  kubectl logs pod/analytics-30gb-5-checkpoint-driver > /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/cluster_experiment/logs/analytics/20210925/analytics-30gb-5-10ex-8gbexmem-4exc-checkpoint-driver.log
   # generate the csv output
   cd ..
-  python experiments_runner/src/run_experiments.py 0 Analytics cluster_experiment/logs/analytics/20210925/analytics-30gb-10ex-8gbexmem-4exc-driver.log 0
-  python experiments_runner/src/run_experiments.py 0 Analytics cluster_experiment/logs/analytics/20210925/analytics-30gb-10ex-8gbexmem-4exc-checkpoint-driver.log 1
+  python experiments_runner/src/run_experiments.py 0 Analytics cluster_experiment/logs/analytics/20210925/analytics-30gb-5-10ex-8gbexmem-4exc-driver.log 0
+  python experiments_runner/src/run_experiments.py 0 Analytics cluster_experiment/logs/analytics/20210925/analytics-30gb-5-10ex-8gbexmem-4exc-checkpoint-driver.log 1
   # Reminder: delete checkpoint dir...
-  kubectl delete sparkapplication analytics-30gb
-  kubectl delete sparkapplication analytics-30gb-checkpoint
-  # 2nd run
-  kubectl apply -f conf/analytics/analytics_30gb.yaml  # with 2 as name
-  kubectl apply -f conf/analytics/analytics_30gb_ckpt.yaml
+  kubectl delete sparkapplication analytics-30gb-5
+  kubectl delete sparkapplication analytics-30gb-5-checkpoint
+  # repeat n times...
