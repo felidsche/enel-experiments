@@ -81,7 +81,7 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
         app_id = "spark-d493e730d6be481896910ff2a003db4e"
         job_id = str(0)
         job_details = self.em.get_job_details(app_id=app_id, job_id=job_id)
-        self.assertIsInstance(job_details, list)
+        self.assertIsInstance(job_details, dict)
 
     def test_get_tc_zero(self):
         log = "Chejkpoint took: 952938 ms"
@@ -136,6 +136,11 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
         self.assertGreater(app_duration, 0, "app id was not found, or duration is 0")
         app_duration = self.em.get_app_duration(app_id="123")
         self.assertEqual(app_duration, 0, "not getting default value for wrong app id")
+
+    def test_get_tc_of_app(self):
+        app_id = "spark-d493e730d6be481896910ff2a003db4e"
+        tc_of_app = self.em.get_tc_of_app(app_id=app_id)
+        self.assertIsInstance(tc_of_app, float)
 
     def test_checkpoint_duration(self):
         """

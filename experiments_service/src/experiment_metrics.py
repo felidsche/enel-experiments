@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 import logging
 from os.path import exists
+from datetime import datetime
 
 logger = logging.getLogger(__name__ + "ExperimentMetrics")  # holds the name of the module
 
@@ -19,12 +20,13 @@ class ExperimentMetrics:
         self.hist_server_url = hist_server_url
         self.local = local
 
-    def get_data(self, hist_server_url: str, endpoint: str) -> dict:
+    def get_data(self, hist_server_url: str, endpoint: str):
         data = {}
         try:
             data = json.loads(requests.get(url=hist_server_url + endpoint).content)
         except (json.JSONDecodeError, requests.exceptions.ConnectionError) as e:
             logger.warning(f"{e}  No values were returned, check the app_id")
+            print(f"{e}  No values were returned, check the app_id")
         return data
 
     def get_app_data(self, app_id, cache_df_file_path: str = None) -> pd.DataFrame:
@@ -88,7 +90,7 @@ class ExperimentMetrics:
         jobs_data = self.get_data(self.hist_server_url, endpoint=jobs_endpoint)
         return jobs_data
 
-    def get_job_details(self, app_id: str, job_id: str) -> list:
+    def get_job_details(self, app_id: str, job_id: str) -> dict:
         """
         :param app_id:
         :param job_id:
@@ -142,6 +144,30 @@ class ExperimentMetrics:
         pattern = r"(Checkpointing took\s)(\d{2,})(\sms)"
         tcs = self.get_matches_from_log(log=log, pattern=pattern, group=2)
         return tcs
+
+    def get_tc_of_app(self, app_id: str) -> float:
+        """
+        the time for checkpoint (tc) of an app is the sum of the duration of all jobs of this app that have the name checkpoint
+        these durations are requested from the Spark History server
+        :return: tc (in minutes)
+        """
+        jobs = self.get_jobs(app_id=app_id)
+        # filter for only the jobs that are checkpoint jobs
+        checkpoint_jobs = [j for j in jobs if "checkpoint" in j["name"]]
+
+        # calculate the duration of each checkpoint job
+        tc_of_app = 0
+        for cj in checkpoint_jobs:
+            # Spark date format
+            date_format = "%Y-%m-%dT%H:%M:%S.%f%Z"
+            subm_time = cj["submissionTime"]
+            subm_datetime = datetime.strptime(subm_time, date_format)
+            comp_time = cj["completionTime"]
+            comp_datetime = datetime.strptime(comp_time, date_format)
+            cj_duration_min = ((comp_datetime - subm_datetime).seconds / 60)
+            tc_of_app += cj_duration_min
+            cj["duration_min"] = cj_duration_min
+        return tc_of_app
 
     def get_has_checkpoint(self) -> bool:
         return self.has_checkpoint
