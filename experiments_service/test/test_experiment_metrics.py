@@ -66,11 +66,22 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
 
     def test_get_data(self):
 
-        jobs = self.em.get_data(
+        applications = self.em.get_data(
             hist_server_url=self.em.hist_server_url,
             endpoint="applications"
         )
+        self.assertIsInstance(applications, list)
+
+    def test_get_jobs(self):
+        app_id = "spark-d493e730d6be481896910ff2a003db4e"
+        jobs = self.em.get_jobs(app_id=app_id)
         self.assertIsInstance(jobs, list)
+
+    def test_get_job_details(self):
+        app_id = "spark-d493e730d6be481896910ff2a003db4e"
+        job_id = str(0)
+        job_details = self.em.get_job_details(app_id=app_id, job_id=job_id)
+        self.assertIsInstance(job_details, list)
 
     def test_get_tc_zero(self):
         log = "Chejkpoint took: 952938 ms"
@@ -102,6 +113,11 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
     def test_get_stages_attempt_data(self):
         log = get_log(path=self.ckpt_run_log_path)
         app_id = self.em.get_app_id(log=log)
+        stages_data = self.em.get_stages_attempt_data(app_id=app_id)
+        self.assertIsInstance(stages_data, list, "Stages data is not a list")
+
+    def test_get_stages_attempt_data_remote(self):
+        app_id = "spark-d493e730d6be481896910ff2a003db4e"
         stages_data = self.em.get_stages_attempt_data(app_id=app_id)
         self.assertIsInstance(stages_data, list, "Stages data is not a list")
 

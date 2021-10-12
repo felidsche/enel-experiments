@@ -12,7 +12,7 @@ class ExperimentMetrics:
 
     def __init__(
             self, has_checkpoint: bool = False,
-            hist_server_url: str = "http://localhost:18080/api/v1/",
+            hist_server_url: str = "http://localhost:18081/api/v1/",
             local: bool = True
     ):
         self.has_checkpoint = has_checkpoint
@@ -78,6 +78,27 @@ class ExperimentMetrics:
             logger.warning(f"{e}, No completed applications found for app_id: {app_id}!")
             return stages_attempt_df
 
+    def get_jobs(self, app_id: str) -> list:
+        """
+        returns
+        :param app_id:
+        :return: all jobs of an application
+        """
+        jobs_endpoint = f"applications/{app_id}/jobs/"
+        jobs_data = self.get_data(self.hist_server_url, endpoint=jobs_endpoint)
+        return jobs_data
+
+    def get_job_details(self, app_id: str, job_id: str) -> list:
+        """
+        :param app_id:
+        :param job_id:
+        :return: the same fields as `get_jobs` but only for one specific job
+        """
+        job_details_endpoint = f"applications/{app_id}/jobs/{job_id}"
+        job_details_data = self.get_data(self.hist_server_url, endpoint=job_details_endpoint)
+        return job_details_data
+
+
     def get_stages_attempt_data(self, app_id: str) -> list:
         stages_endpoint = f"applications/{app_id}/stages/"
         stages_data = self.get_data(self.hist_server_url, endpoint=stages_endpoint)
@@ -91,14 +112,8 @@ class ExperimentMetrics:
                 stages_attempts.append(next_stage_attempts)
         except TypeError as e:
             logger.warning(f"{e}, No completed applications found for app_id: {app_id}!")
+            print(f"{e}, No completed applications found for app_id: {app_id}!")
         return stages_attempts
-
-    """
-    def get_stage_data(self, app_id: str, job_data: dict) -> dict:
-        for job in job_data:
-            
-        endpoint = f"/applications/{app_id}/stages/{stage_id}"
-    """
 
     def get_task_list(self, hist_server_url, app_id: str, stage_id: str, stage_attempt_id: str):
         endpoint = f"applications/{app_id}/stages/{stage_id}/{stage_attempt_id}/taskList"
@@ -175,7 +190,6 @@ class ExperimentMetrics:
         except ValueError as e:
             logger.error(f"Error: {e}, No tcms cound be added, returning it without it")
             return app_data
-
 
     def get_app_id(self, log: str) -> str:
         """
