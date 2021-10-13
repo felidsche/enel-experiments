@@ -113,7 +113,3 @@ cd ..
 python experiments_runner/src/run_experiments.py 0 Analytics cluster_experiment/logs/analytics/20210924/analytics-1gb-driver.log 0
 python experiments_runner/src/run_experiments.py 0 Analytics cluster_experiment/logs/analytics/20210924/analytics-1gb-checkpoint-driver.log 1
 ```
-
-## 12. schedule `Analytics` workload every 10m and track only the last 20 successful runs
-- update the application after 20 runs
-- see `conf/analytics`

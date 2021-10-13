@@ -121,21 +121,29 @@ class ExperimentsRunner:
             """)
         return file_path
 
-    def get_metrics(self, has_checkpoint: bool, hist_server_url: str, cache_df_file_path: str = None) -> Tuple(str,
-                                                                                                               pd.DataFrame):
+    def get_metrics(self, has_checkpoint: bool, hist_server_url: str, app_id: str = None,
+                    cache_df_file_path: str = None) -> Tuple(str,
+                                                             pd.DataFrame):
+        """
+        function that renders the output data
+        :param has_checkpoint:
+        :param hist_server_url:
+        :param app_id:
+        :param cache_df_file_path:
+        :return: the ID and the output data of the app
+        """
         logger.info(f"Getting metrics from Spark Application  checkpoint: {has_checkpoint}")
         # get the experiment metrics
         em = ExperimentMetrics(has_checkpoint=has_checkpoint, hist_server_url=hist_server_url, local=self.local)
-
         log = get_log(self.log_path)
-        app_id = em.get_app_id(log=log)
+        if app_id is None:
+            app_id = em.get_app_id(log=log)
         app_data = em.get_app_data(app_id=app_id, cache_df_file_path=cache_df_file_path)
         tcs = em.get_tcs(log=log)
 
         rdds = em.get_checkpoint_rdds(log=log)
         duration = em.get_app_duration(app_id=app_id)
         logger.info(f"For App_ID: {app_id} The total duration was {duration} ms")
-
 
         rdd_tcs = em.merge_tc_rdds(
             tcs=tcs,
@@ -146,23 +154,34 @@ class ExperimentsRunner:
                 logger.info(f"App_id: {app_id}; Checkpointing the rdd with ID: {key} took: {value} ms")
             logger.info(f"In sum, checkpointing App_id: {app_id} took: {sum(tcs)} ms.")
         try:
-            app_data_tc = em.add_tc_to_app_data(rdd_tcs=rdd_tcs, app_data=app_data)
+            tc_per_stage = em.get_tc_per_stage(app_id=app_id)
+            app_data_tc = em.add_tc_to_tasks_in_checkpoint_stage(tc_per_stage=tc_per_stage, app_data=app_data)
             return app_id, app_data_tc
         except AttributeError as e:
             logging.error(f"{e}, vpn connected and ports from history server forwarded?")
             print(f"{e}, vpn connected and ports from history server forwarded?")
             sys.exit()
 
-
-
-    def run_remote(self, has_checkpoint: bool, app_name: str, cache_df_file_path: str = None) -> str:
+    def run_remote(self, has_checkpoint: bool, app_name: str, app_id: str = None,
+                   cache_df_file_path: str = None) -> str:
+        """
+        produces a .csv with the data of the workload on task granularity and the time for a checkpoint
+        :param has_checkpoint:
+        :param app_name:
+        :param cache_df_file_path:
+        :return: the path to the output file
+        """
         logger.info("""
             ########################################
             #   STARTING A NEW REMOTE EXPERIMENT   #
             ########################################
             """)
-        app_id, metrics = self.get_metrics(hist_server_url=self.history_server_url, has_checkpoint=has_checkpoint,
+        if app_id is None:
+            app_id, metrics = self.get_metrics(hist_server_url=self.history_server_url, has_checkpoint=has_checkpoint,
                                            cache_df_file_path=cache_df_file_path)
+        else:
+            _, metrics = self.get_metrics(hist_server_url=self.history_server_url, has_checkpoint=has_checkpoint,
+                                       cache_df_file_path=cache_df_file_path, app_id=app_id)
         file_path = self.write_results(app_data=metrics, key=app_name, app_id=app_id, has_checkpoint=has_checkpoint)
 
         logger.info(f"Result: {metrics.head(3)}")
@@ -213,6 +232,13 @@ if __name__ == '__main__':
         app_name = sys.argv[2]
         log_path = sys.argv[3]
         has_checkpoint = bool(int(sys.argv[4]))
-        # requires vpn connection and port forwarding of spark history server
-        runner = ExperimentsRunner(local=local, history_server_url="http://localhost:18081/api/v1/", log_path=log_path)
-        runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name)
+
+        if "/" in log_path:
+            # use the log path
+            runner = ExperimentsRunner(local=local, history_server_url="http://localhost:18081/api/v1/", log_path=log_path)
+            runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name)
+        else:
+            # use the app id
+            runner = ExperimentsRunner(local=local, history_server_url="http://localhost:18081/api/v1/")
+            runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name, app_id=log_path)
+

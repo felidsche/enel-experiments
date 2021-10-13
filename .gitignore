@@ -154,8 +154,9 @@ output/local/Analytics/*.csv
 output/local/PageRank/*.csv
 
 output/cluster/LDAWorkload/*.csv
-output/cluster/GradientBoostedTrees/*.csv
+output/cluster/GradientBoostedTreesDeprecated/*.csv
 output/cluster/Analytics/*.csv
+output/cluster/AnalyticsDeprecated/*.csv
 output/cluster/PageRank/*.csv
 
 # actual cluster data

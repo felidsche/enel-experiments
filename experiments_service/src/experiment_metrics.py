@@ -1,12 +1,28 @@
 import json
+import logging
 import re
+from datetime import datetime
+from os.path import exists
+
 import pandas as pd
 import requests
-import logging
-from os.path import exists
-from datetime import datetime
 
 logger = logging.getLogger(__name__ + "ExperimentMetrics")  # holds the name of the module
+
+SPARK_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f%Z"
+
+
+def get_duration(subm_time: str, comp_time: str) -> float:
+    """
+    handles the date conversion and returns the timedelta as a floating point number
+    :param subm_time: date string
+    :param comp_time: date string
+    :return:
+    """
+    subm_datetime = datetime.strptime(subm_time, SPARK_DATE_FORMAT)
+    comp_datetime = datetime.strptime(comp_time, SPARK_DATE_FORMAT)
+    duration_min = ((comp_datetime - subm_datetime).seconds / 60)
+    return duration_min
 
 
 class ExperimentMetrics:
@@ -66,15 +82,20 @@ class ExperimentMetrics:
                 3. apply(pd.Series): unpack the dict column in multiple columns
                 4. reset_index(0): remove the MultiIndex stage_attempt/task_id and go back to the default index
             """
-            tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series))\
-                .unstack()\
-                .apply(pd.Series)\
+            tasks_df = pd.DataFrame(stages_attempt_df["tasks"].apply(pd.Series)) \
+                .unstack() \
+                .apply(pd.Series) \
                 .reset_index(0)
             # select only relevant columns
             tasks_df = tasks_df[["attempt", "duration", "executorId", "index", "launchTime", "taskId"]]
             df = stages_attempt_df.join(tasks_df).drop(labels="tasks", axis=1)
             df.rename(columns={"attempt": "taskAttempt", "duration": "taskDuration", "executorId": "taskExecutorId",
                                "index": "taskIndex", "launchTime": "taskLaunchTime"}, inplace=True)
+            # select all columns for de-duplication except rddIds because lists are not hashable
+            df = df.drop_duplicates(subset=['status', 'stageId', 'attemptId', 'numTasks', 'numActiveTasks',
+                                            'numCompleteTasks', 'numFailedTasks', 'numKilledTasks',
+                                            'submissionTime', 'firstTaskLaunchedTime', 'completionTime', 'name', 'taskAttempt', 'taskDuration', 'taskExecutorId', 'taskIndex',
+                                            'taskLaunchTime', 'taskId'])
             return df
         except KeyError as e:
             logger.warning(f"{e}, No completed applications found for app_id: {app_id}!")
@@ -99,7 +120,6 @@ class ExperimentMetrics:
         job_details_endpoint = f"applications/{app_id}/jobs/{job_id}"
         job_details_data = self.get_data(self.hist_server_url, endpoint=job_details_endpoint)
         return job_details_data
-
 
     def get_stages_attempt_data(self, app_id: str) -> list:
         stages_endpoint = f"applications/{app_id}/stages/"
@@ -158,16 +178,56 @@ class ExperimentMetrics:
         # calculate the duration of each checkpoint job
         tc_of_app = 0
         for cj in checkpoint_jobs:
-            # Spark date format
-            date_format = "%Y-%m-%dT%H:%M:%S.%f%Z"
             subm_time = cj["submissionTime"]
-            subm_datetime = datetime.strptime(subm_time, date_format)
             comp_time = cj["completionTime"]
-            comp_datetime = datetime.strptime(comp_time, date_format)
-            cj_duration_min = ((comp_datetime - subm_datetime).seconds / 60)
+            cj_duration_min = get_duration(subm_time=subm_time, comp_time=comp_time)
             tc_of_app += cj_duration_min
             cj["duration_min"] = cj_duration_min
         return tc_of_app
+
+    def get_tc_per_stage(self, app_id: str) -> dict:
+        """
+        utility function to return a dict which can help assign tc to tasks in a checkpoint stage
+        :param app_id:
+        :return: a dict {"stage_id": "tc in minutes", ...}
+        """
+        stage_attempts_list = self.get_stages_attempt_data(app_id=app_id)
+        # assumes that there was only 1 attempt per stage
+        # TODO: make this more robust for multiple attempts
+        # filter only the stages that did checkpoints
+        checkpoint_stages = [s[0] for s in stage_attempts_list if "checkpoint" in s[0]["name"] and s[0]["status"]=="COMPLETE"]
+        stage_ids = []
+        tcs = []
+        # fill tc_per_stage iteratively
+        for cs in checkpoint_stages:
+            stage_id = cs["stageId"]
+            stage_ids.append(stage_id)
+            # calculate the duration for each checkpoint stage
+            subm_time = cs["firstTaskLaunchedTime"]
+            comp_time = cs["completionTime"]
+            cs_duration_min = get_duration(subm_time=subm_time, comp_time=comp_time)
+            tcs.append(cs_duration_min)
+        tc_per_stage = dict(zip(stage_ids, tcs))
+        return tc_per_stage
+
+    def add_tc_to_tasks_in_checkpoint_stage(self, app_data: pd.DataFrame, tc_per_stage:dict) -> pd.DataFrame:
+        """
+        Assumption: The tc of a task is the duration of the checkpoint stage / number of tasks in a stage
+        Reasoning: All tasks run in parallel on an equally sized chunk of data so each will take the same amount of time
+        :return: DataFrame with tcMin column
+        """
+        # convert tc_per_stage dict to pandas dataframe
+        tc_per_stage_df = pd.DataFrame.from_dict(tc_per_stage, orient="index", columns=["tcMinStage"]).reset_index()
+        tc_per_stage_df.rename(columns={"index": "stageId"}, inplace=True)
+        # add the tcMin column by inner join
+        try:
+            app_data_tc = pd.merge(app_data, tc_per_stage_df, on="stageId", how="left")
+            # add a new column with the tcMinTask
+            app_data_tc = app_data_tc.assign(tcMinTask=app_data_tc["tcMinStage"] / app_data_tc["numTasks"])
+            return app_data_tc
+        except ValueError as e:
+            logger.error(f"Error: {e}, No tcms cound be added, returning it without it")
+            return app_data
 
     def get_has_checkpoint(self) -> bool:
         return self.has_checkpoint

@@ -58,3 +58,16 @@ class TestExperimentsRunner(TestCase):
         file_path = runner.run_remote(has_checkpoint=has_checkpoint, app_name=app_name,
                                       cache_df_file_path=cache_df_file_path)
         self.assertIsInstance(file_path, str, "file_path is not a string, sth went wrong")
+
+    def test_run_remote_no_log(self):
+        local = bool(0)
+        app_name = "AnalyticsTest"
+        app_id = "spark-d493e730d6be481896910ff2a003db4e"
+        has_checkpoint = bool(1)
+        runner = ExperimentsRunner(local=local, history_server_url="http://localhost:18081/api/v1/")
+        file_path = runner.run_remote(
+            has_checkpoint=has_checkpoint,
+            app_name=app_name,
+            app_id=app_id
+        )
+        self.assertIsInstance(file_path, str, "file_path is not a string, sth went wrong")

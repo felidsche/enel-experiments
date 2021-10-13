@@ -139,8 +139,39 @@ class TestExperimentMetrics(TestCase, ExperimentMetrics):
 
     def test_get_tc_of_app(self):
         app_id = "spark-d493e730d6be481896910ff2a003db4e"
+        expected_tc_of_app = 19.283333333333335
         tc_of_app = self.em.get_tc_of_app(app_id=app_id)
         self.assertIsInstance(tc_of_app, float)
+        self.assertEquals(expected_tc_of_app, tc_of_app, "Tc of app is wrong")
+
+    def test_get_tc_per_stage(self):
+        app_id = "spark-d493e730d6be481896910ff2a003db4e"
+        tc_per_stage = self.em.get_tc_per_stage(app_id=app_id)
+        num_stages = 4
+        tc_of_app = self.em.get_tc_of_app(app_id=app_id)
+        self.assertIsInstance(tc_per_stage, dict)
+        self.assertEquals(num_stages, len(tc_per_stage.keys()))
+        # the sum of the checkpoint stages is the same as the sum of the tc of the app
+        self.assertEquals(int(tc_of_app), int(sum(tc_per_stage.values())))
+
+    def test_add_tc_to_tasks_in_checkpoint_stage(self):
+        app_id = "spark-d493e730d6be481896910ff2a003db4e"
+        app_data = self.em.get_app_data(app_id=app_id)
+        rowcount_app_data = len(app_data)
+        colcount_app_data = len(app_data.columns)
+        tc_per_stage = self.em.get_tc_per_stage(app_id=app_id)
+        app_data_tc = self.em.add_tc_to_tasks_in_checkpoint_stage(
+            app_data=app_data,
+            tc_per_stage=tc_per_stage
+        )
+        rowcount_app_data_tc = len(app_data_tc)
+        colcount_app_data_tc = len(app_data_tc.columns)
+        self.assertIsInstance(app_data_tc, pd.DataFrame)
+        # make sure no rows got added
+        self.assertEquals(rowcount_app_data, rowcount_app_data_tc, "The row count changed after adding tc")
+        # make sure two columns got added
+        self.assertGreater(colcount_app_data_tc, colcount_app_data, "The column count DIDNT changed after adding tc")
+
 
     def test_checkpoint_duration(self):
         """
