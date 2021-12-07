@@ -9,7 +9,7 @@
 ```bash
 export HOMEBREW_NO_AUTO_UPDATE=1
 brew install openvpn
-sudo openvpn --config <configfile>.ovpn --redirect-gateway  # the last flag is only necessary when down- or uploading
+sudo openvpn --config /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/spark-k8s-cluster/felix.j.schneider@campus.tu-berlin.de.ovpn --redirect-gateway  # the last flag is only necessary when down- or uploading
   ```
 - create a configuration for the HDFS cluster
 ```bash

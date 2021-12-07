@@ -41,7 +41,7 @@
     --master local \
     --driver-java-options "-Dlog4j.configuration=file:src/main/resources/log4j.properties" \
     target/spark-checkpoint-workload-1.0-SNAPSHOT-jar-with-dependencies.jar \
-    --sampling-fraction 0.01 --checkpoint-rdd 1 /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER_ITEM.txt /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER.txt
+    --sampling-fraction 0.01 --checkpoint 1 /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER_ITEM.txt /Users/fschnei4/TUB_Master_ISM/SoSe21/MA/code/BigDataBench_V5.0_BigData_ComponentBenchmark/BigDataGeneratorSuite/Table_datagen/e-com/output/OS_ORDER.txt
     ```
 
   
