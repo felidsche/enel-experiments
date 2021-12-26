@@ -53,7 +53,7 @@ object PredictTaskFailures {
       "latest", "status", "mtts_task", "ttr_task", "tts_task", "ttf_task", "reduce_checkpoint", "second_quant_checkpoint", "third_quant_checkpoint"
     )
 
-    val Array(training, validation) = data.randomSplit(Array(0.8, 0.2), seed)
+    var Array(training, testing, validation) = data.randomSplit(Array(0.5, 0.25, 0.25), seed)
 
     // Index labels, adding metadata to the label column.
     // Fit on whole dataset to include all labels in index.
@@ -173,13 +173,28 @@ object PredictTaskFailures {
       .setNumFolds(folds)
       .setParallelism(parallelism)
 
-    // Run outer CV to evalute the bestModel on unseen data.
-    val outerCvModel = outerCv.fit(validation)
+    // Run outer CV to evalute the bestModel on unseen testing data.
+    val outerCvModel = outerCv.fit(testing)
 
     // log the metrics
     val outerCvAvgMetrics = outerCvModel.avgMetrics
     logger.info("Model evaluation metrics: \n")
     logger.info(outerCvAvgMetrics)
+
+    /*
+     * total no. of models trained:
+     * Model selection: 5 * ( 3 * 2) = 30
+     * Model evaluation: 5
+     */
+
+    validation = outerCvModel.bestModel.transform(validation)
+
+    logger.info("Model validation: \n")
+    logger.info(validation.count())
+
+    validation.repartition(2).write.options(Map("compression" -> "gzip", "delimiter" -> ",", "header" -> "true")).csv(
+      "/home/felix/TUB_Master_ISM/SoSe21/MA/msc-thesis-saft-experiments/output/eval/PredictTaskFailure"
+    )
 
     spark.stop()
   }
